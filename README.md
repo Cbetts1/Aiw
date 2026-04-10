@@ -228,12 +228,121 @@ print(ledger.to_json())
 
 ---
 
+## AIM City — Governed AI Mesh
+
+The `aim/city/` module turns a raw AIM mesh into a **fully governed city** —
+a self-organising network of specialised bots that build, educate, protect,
+and orchestrate themselves automatically.
+
+### City Roles
+
+| Bot | Role | Default Port | Responsibilities |
+|-----|------|-------------|-----------------|
+| `CityGovernorBot` | `governor` | 7800 | Orchestrates all bots; issues policies and alerts; tracks citizens |
+| `ProtectionAgent` | `protector` | 7801 | Verifies signatures; audits registry; blacklists threats |
+| `BuilderBot` | `builder` | 7802 | Deploys new nodes into the registry |
+| `EducationBot` | `educator` | 7803 | Knowledge base; teaches new topics to citizens |
+| `ArchitectBot` | `architect` | 7804 | Topology planning; blueprints; capacity recommendations |
+| `CitizenNode` | `citizen` | any | Participant nodes that live inside the city |
+| `IntegrityGuard` | — | — | Standalone SHA-256 tamper-detection (not a network node) |
+
+### One-command city launch
+
+```bash
+# Start the full fleet (5 bots) on default ports
+aim city start
+
+# Custom host/ports
+aim city start --host 0.0.0.0 --governor-port 9800
+
+# Persist all events to disk
+aim city start --ledger /var/aim/city.jsonl
+```
+
+### Query the Governor
+
+```bash
+aim city status           # default 127.0.0.1:7800
+aim city status --port 9800
+```
+
+### Python API
+
+```python
+import asyncio
+from aim.city.launcher import CityLauncher, CityConfig
+
+async def main():
+    launcher = CityLauncher(CityConfig(host="0.0.0.0"))
+    await launcher.launch()   # starts Governor, Protector, Builder, Educator, Architect
+
+asyncio.run(main())
+```
+
+#### Add a citizen
+
+```python
+from aim.city.citizen import CitizenNode
+
+citizen = CitizenNode(port=7810, name="Alice")
+await citizen.start()
+```
+
+#### Teach the city something new
+
+```python
+from aim.city.educator import EducationBot
+from aim.protocol.message import AIMMessage
+
+edu = EducationBot(port=7803)
+msg = AIMMessage.task("teach", {
+    "keyword":  "quantum",
+    "response": "Quantum computing uses qubits to solve problems beyond classical computers.",
+}, sender_id="admin")
+await edu._handler.dispatch(msg)
+```
+
+#### Issue a city policy
+
+```python
+gov = CityGovernorBot(port=7800)
+await gov._task_issue_policy({
+    "policy": "All nodes must register within 30 seconds of joining the mesh."
+})
+```
+
+#### Run an integrity audit
+
+```python
+from aim.city.integrity import IntegrityGuard
+
+guard = IntegrityGuard()
+print(guard.audit_registry())    # checks all nodes for valid origin creator
+print(guard.audit_ledger())      # verifies ledger is append-only
+print(guard.full_report())       # signed tamper-detection summary
+```
+
+### City Security Model
+
+The city is protected at four independent layers:
+
+1. **HMAC-SHA256 `CreatorSignature`** — every node, message, and ledger entry
+   carries a digest derived from `Cbetts1/AIM`. Tampering invalidates the chain.
+2. **Append-only `LegacyLedger`** — all events are write-once. Nothing can be
+   deleted or rewritten without breaking the audit trail.
+3. **`ProtectionAgent` real-time auditing** — scans the registry for nodes
+   with invalid creator fields; blacklists rogue entries; logs every threat.
+4. **`IntegrityGuard` checksum service** — takes SHA-256 snapshots of critical
+   configuration and alerts loudly if any snapshot diverges.
+
+---
+
 ## Project Structure
 
 ```
 aim/
 ├── __init__.py             # package metadata + origin creator
-├── cli.py                  # command-line interface
+├── cli.py                  # command-line interface (includes `aim city`)
 ├── protocol/
 │   ├── message.py          # AIMMessage envelope + Intent taxonomy
 │   └── handler.py          # ProtocolHandler dispatcher
@@ -244,15 +353,27 @@ aim/
 ├── compute/
 │   ├── router.py           # TaskRouter — mesh-wide task routing
 │   └── executor.py         # Executor — local async task runner
-└── identity/
-    ├── signature.py        # CreatorSignature — HMAC origin proof
-    └── ledger.py           # LegacyLedger — append-only event log
+├── identity/
+│   ├── signature.py        # CreatorSignature — HMAC origin proof
+│   └── ledger.py           # LegacyLedger — append-only event log
+└── city/
+    ├── __init__.py         # city package exports
+    ├── roles.py            # CityRole / CityIntent / CityEventKind enums
+    ├── governor.py         # CityGovernorBot — chief orchestrator
+    ├── citizen.py          # CitizenNode — city participant
+    ├── protector.py        # ProtectionAgent — security / audit
+    ├── builder.py          # BuilderBot — node deployment
+    ├── educator.py         # EducationBot — knowledge base
+    ├── architect.py        # ArchitectBot — topology planning
+    ├── integrity.py        # IntegrityGuard — tamper detection
+    └── launcher.py         # CityLauncher — one-call automation
 
 tests/
 ├── test_protocol.py
 ├── test_node.py
 ├── test_compute.py
-└── test_identity.py
+├── test_identity.py
+└── test_city.py            # 69 tests covering all city components
 ```
 
 ---
@@ -269,6 +390,7 @@ tests/
 | 5 | Distributed routing | Use `TaskRouter` with `NodeRegistry` |
 | 6 | Persistent ledger | Pass `persist_path=` to `LegacyLedger` |
 | 7 | Cloud deployment | Deploy nodes on VMs, point `--peers` at each other |
+| 8 | Launch a city | `aim city start` — five governed bots in one command |
 
 ---
 

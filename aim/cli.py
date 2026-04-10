@@ -108,7 +108,39 @@ async def _cmd_query(args: argparse.Namespace) -> None:
         print("No response received.", file=sys.stderr)
 
 
-async def _cmd_status(args: argparse.Namespace) -> None:
+async def _cmd_city_start(args: argparse.Namespace) -> None:
+    from aim.city.launcher import CityLauncher, CityConfig
+
+    config = CityConfig(
+        host=args.host,
+        governor_port=args.governor_port,
+        protector_port=args.protector_port,
+        builder_port=args.builder_port,
+        educator_port=args.educator_port,
+        architect_port=args.architect_port,
+        ledger_path=args.ledger or None,
+    )
+    launcher = CityLauncher(config)
+    try:
+        await launcher.launch()
+    except KeyboardInterrupt:
+        await launcher.shutdown()
+
+
+async def _cmd_city_status(args: argparse.Namespace) -> None:
+    msg = AIMMessage.task("city_status", {}, sender_id="cli")
+    reader, writer = await asyncio.open_connection(args.host, args.port)
+    from aim.node.base import _send_message, _recv_message
+    await _send_message(writer, msg)
+    response = await _recv_message(reader)
+    writer.close()
+    if response:
+        print(json.dumps(response.payload.get("result", response.payload), indent=2))
+    else:
+        print("Governor did not respond.", file=sys.stderr)
+
+
+
     msg = AIMMessage.heartbeat(sender_id="cli")
     reader, writer = await asyncio.open_connection(args.host, args.port)
     from aim.node.base import _send_message, _recv_message
@@ -156,6 +188,23 @@ def _build_parser() -> argparse.ArgumentParser:
     status_p.add_argument("--host", default="127.0.0.1")
     status_p.add_argument("--port", type=int, default=7700)
 
+    # --- city subcommand ---
+    city_p = sub.add_parser("city", help="AIM city governance commands")
+    city_sub = city_p.add_subparsers(dest="city_command")
+
+    city_start_p = city_sub.add_parser("start", help="Start the full AIM city bot fleet")
+    city_start_p.add_argument("--host",           default="127.0.0.1")
+    city_start_p.add_argument("--governor-port",  type=int, default=7800)
+    city_start_p.add_argument("--protector-port", type=int, default=7801)
+    city_start_p.add_argument("--builder-port",   type=int, default=7802)
+    city_start_p.add_argument("--educator-port",  type=int, default=7803)
+    city_start_p.add_argument("--architect-port", type=int, default=7804)
+    city_start_p.add_argument("--ledger",         default="", help="Path for persistent ledger file")
+
+    city_status_p = city_sub.add_parser("status", help="Query city status from the Governor")
+    city_status_p.add_argument("--host", default="127.0.0.1")
+    city_status_p.add_argument("--port", type=int, default=7800)
+
     # --- web subcommand ---
     web_p = sub.add_parser("web", help="Browser-accessible web bridge")
     web_sub = web_p.add_subparsers(dest="web_command")
@@ -188,6 +237,10 @@ def main(argv: list[str] | None = None) -> None:
         asyncio.run(_cmd_query(args))
     elif args.command == "status":
         asyncio.run(_cmd_status(args))
+    elif args.command == "city" and getattr(args, "city_command", None) == "start":
+        asyncio.run(_cmd_city_start(args))
+    elif args.command == "city" and getattr(args, "city_command", None) == "status":
+        asyncio.run(_cmd_city_status(args))
     elif args.command == "web" and getattr(args, "web_command", None) == "start":
         from aim.web.server import start_web_server
         asyncio.run(start_web_server(host=args.host, port=args.port))
