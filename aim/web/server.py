@@ -277,6 +277,10 @@ def _serve_static(path: str) -> tuple[int, bytes, str]:
     mapping: dict[str, str] = {
         "/":              "index.html",
         "/index.html":    "index.html",
+        "/about":         "about.html",
+        "/about.html":    "about.html",
+        "/apps":          "apps.html",
+        "/apps.html":     "apps.html",
         "/directory":     "directory.html",
         "/directory.html":"directory.html",
         "/legal":         "legal.html",
@@ -307,7 +311,9 @@ async def _handle_connection(
 
         logger.debug("HTTP %s %s %s", method, path, qs)
 
-        if path in ("/", "/index.html", "/directory", "/directory.html",
+        if path in ("/", "/index.html", "/about", "/about.html",
+                    "/apps", "/apps.html",
+                    "/directory", "/directory.html",
                     "/legal", "/legal.html"):
             status, resp_body, ct = _serve_static(path)
             _http_response(writer, status, resp_body, ct)
