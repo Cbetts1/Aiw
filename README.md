@@ -117,6 +117,24 @@ pip install -e .
 aim node start --host 127.0.0.1 --port 7700
 ```
 
+### Open the browser UI (aim.visionfortomorrow)
+
+```bash
+# Start the web bridge on port 8080 (all interfaces)
+aim web start
+
+# Custom port
+aim web start --port 80
+```
+
+Then open **http://localhost:8080** (or your server's public IP) in any browser
+or device — Chrome, Safari, Firefox, mobile, anything.  
+The page shows the **AIM Vision** and lets anyone query a running AIM node for free.
+
+To serve it at **aim.visionfortomorrow**:
+1. Point the domain's DNS A-record to your server's public IP.
+2. Run `aim web start --port 80` (or use a reverse proxy like nginx on port 80→8080).
+
 ### Query a running node
 
 ```bash

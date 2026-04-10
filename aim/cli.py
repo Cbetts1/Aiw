@@ -156,6 +156,20 @@ def _build_parser() -> argparse.ArgumentParser:
     status_p.add_argument("--host", default="127.0.0.1")
     status_p.add_argument("--port", type=int, default=7700)
 
+    # --- web subcommand ---
+    web_p = sub.add_parser("web", help="Browser-accessible web bridge")
+    web_sub = web_p.add_subparsers(dest="web_command")
+
+    web_start_p = web_sub.add_parser("start", help="Start the AIM web bridge")
+    web_start_p.add_argument(
+        "--host", default="0.0.0.0",
+        help="Interface to listen on (default: 0.0.0.0 — all interfaces)",
+    )
+    web_start_p.add_argument(
+        "--port", type=int, default=8080,
+        help="HTTP port to serve the UI on (default: 8080)",
+    )
+
     return parser
 
 
@@ -174,6 +188,9 @@ def main(argv: list[str] | None = None) -> None:
         asyncio.run(_cmd_query(args))
     elif args.command == "status":
         asyncio.run(_cmd_status(args))
+    elif args.command == "web" and getattr(args, "web_command", None) == "start":
+        from aim.web.server import start_web_server
+        asyncio.run(start_web_server(host=args.host, port=args.port))
     else:
         parser.print_help()
 
