@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aim"
+version = "0.1.0"
+description = "AIM — Artificial Intelligence Mesh: a parallel AI-native internet layer"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = []
+
+[project.scripts]
+aim = "aim.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["aim*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
