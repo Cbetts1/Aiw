@@ -111,7 +111,7 @@ async def _handle_query(qs: dict[str, str]) -> tuple[int, str]:
         writer.close()
         try:
             await writer.wait_closed()
-        except Exception:
+        except OSError:
             pass
     except (ConnectionRefusedError, OSError):
         return 502, json.dumps({"error": f"Cannot connect to AIM node at {host}:{port}"})
@@ -143,7 +143,7 @@ async def _handle_status(qs: dict[str, str]) -> tuple[int, str]:
         writer.close()
         try:
             await writer.wait_closed()
-        except Exception:
+        except OSError:
             pass
     except (ConnectionRefusedError, OSError):
         return 502, json.dumps({"online": False, "error": f"Cannot connect to {host}:{port}"})
