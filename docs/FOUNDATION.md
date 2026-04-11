@@ -75,7 +75,7 @@ by providing — at no cost, ever:
   professional documents for anyone who needs it
 - **Free job search resources** — job listings, career advice, interview
   preparation, and connections to opportunities
-- **Situational resources** — personalised help based on your circumstances,
+- **Situational resources** — personalized help based on your circumstances,
   whatever they may be
 - **Information sharing** — open, honest knowledge for anyone who needs it
 
@@ -187,7 +187,7 @@ open-source and open-standard protections.
 **Recommended jurisdictions** (in order of preference):
 1. **Delaware, USA** — fastest and lowest-cost for US non-profits
 2. **Switzerland** — strong precedent for open-source foundations (CERN, Ethereum)
-3. **United Kingdom** — Community Interest Company (CIC) or Charitable Incorporated Organisation
+3. **United Kingdom** — Community Interest Company (CIC) or Charitable Incorporated Organization
 
 **Incorporation steps:**
 1. File articles of incorporation stating the foundation's purpose is to

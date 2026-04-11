@@ -69,7 +69,7 @@ electricity — available to every family, every school, every community.
   professional documents
 - **Free job search resources** — job listings, career advice, interview
   preparation, and connections to opportunities
-- **Situational resources** — personalised help based on your circumstances,
+- **Situational resources** — personalized help based on your circumstances,
   whatever they are
 
 ### The dream: **a future with less poverty**
