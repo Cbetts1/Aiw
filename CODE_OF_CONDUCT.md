@@ -11,7 +11,9 @@ nationality, personal appearance, race, religion, or sexual identity and
 orientation.
 
 AIM is built to be the twin of the World Wide Web: free, open, and accessible
-to all of humanity. Our community standards reflect that mission.
+to all of humanity. It is designed to help those in need, to share information
+freely, and to close the gap between those who have knowledge and those who
+don't. Our community standards reflect that mission.
 
 ## Our Standards
 

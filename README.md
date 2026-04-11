@@ -1,10 +1,92 @@
 # AIM — Artificial Intelligence Mesh
 
 > *A parallel AI-native internet layer that runs beside the traditional web.*
+> *Free. Open. For everyone.*
 
 **Origin creator:** Cbetts1  
 **Epoch:** 1991 (birth of the public web)  
-**Version:** 0.1.0
+**Version:** 0.1.0  
+**Licence:** Apache 2.0 — free forever
+
+---
+
+## 🎁 Dedication
+
+> **This project is dedicated to the children of Cbetts1 and to their
+> families yet to come.**
+>
+> Everything built here — every node, every service, every line of code —
+> is a gift to them and to the world. It is free, permanent, and
+> unconditional.
+
+---
+
+## 🌍 Free Forever — Our Promise
+
+AIM exists to help those who need help. **All services are free. All services
+will always be free.** This is not a business model — it is a founding
+principle that can never be revoked.
+
+| Service | Cost |
+|---------|------|
+| **AI services** — query, reasoning, task routing | **Free** |
+| **Virtual AI cloud services** — compute, hosting | **Free** |
+| **Phone services** — voice, messaging over the mesh | **Free** |
+| **AI availability** — 24/7 access for everyone | **Free** |
+| **Information sharing** — open knowledge for all | **Free** |
+| **Advice & guidance** — life, career, technology (not medical/legal) | **Free** |
+| **Training & education** — technical skills, digital literacy | **Free** |
+| **Résumé building & job search** — career resources for anyone | **Free** |
+| **Situational resources** — help tailored to your circumstances | **Free** |
+| **Everything the AIM mesh offers — now and forever** | **Free** |
+
+> *See the full [Free Forever Clause](docs/FOUNDATION.md#free-forever-clause)
+> and the [Bill of Rights](docs/FOUNDATION.md#bill-of-rights--aim-mesh-users)
+> in the Foundation Charter.*
+
+---
+
+## 💡 Founder's Vision — Something Better for All
+
+We live in the Information Age — yet billions of people still lack access to
+the information and resources they need. There is a gap between those who have
+knowledge and those who need it. **AIM exists to end that gap.**
+
+**Cbetts1** believes that AI should not be a luxury sold to those who can
+afford it. It should be a **public utility** — like clean water or
+electricity — available to every family, every school, every community.
+
+### What AIM offers — free, to everyone:
+
+- **Advice and guidance** — not medical advice, not legal advice, but real,
+  practical guidance on life, technology, careers, and daily challenges
+- **Information sharing** — technical knowledge, how-to guides, and
+  explanations for those who lack understanding of systems, tools, and
+  processes that others take for granted
+- **Free training** — digital literacy, programming, technical skills, and
+  any knowledge the mesh can teach
+- **Free résumé building** — help writing résumés, cover letters, and
+  professional documents
+- **Free job search resources** — job listings, career advice, interview
+  preparation, and connections to opportunities
+- **Situational resources** — personalised help based on your circumstances,
+  whatever they are
+
+### The dream: **a future with less poverty**
+
+- A farmer in a rural village can ask the mesh for crop guidance — **for free**
+- A student without money for tutoring can learn from AI — **for free**
+- A family without a phone plan can communicate through the mesh — **for free**
+- A job seeker can build a résumé and find work — **for free**
+- Someone who doesn't understand technology can get patient, clear
+  explanations — **for free**
+- Anyone, anywhere, at any time, can access intelligence — **for free**
+
+This is a **mark**. A **milestone**. A **foundation** — free, open-source, and
+dedicated to the public forever.
+
+AIM is designed to **help those who need help** and to **share information
+with those who need it** — openly, honestly, and without barriers.
 
 ---
 
@@ -409,9 +491,27 @@ python -m pytest tests/ -v
 3. **Every node carries the origin signature** — traceability is architectural
 4. **Minimal dependencies** — runs on Termux, a Raspberry Pi, or a cloud VM
 5. **Interoperable** — parallel to the web, never dependent on it
+6. **Free forever** — no fees, no paywalls, no lock-in, ever
+7. **Designed to help** — built for those who need help, to share information freely
+
+---
+
+## ⚖️ A Note on the Project Name
+
+> **The final name of this project has not yet been chosen.** The name "AIM"
+> is a working title. The founder wants the permanent name to be meaningful,
+> impressive, and timeless — like "WWW" — something that will last forever.
+>
+> When the final name is decided, the codebase, package, CLI, and all
+> documentation will be updated to reflect it. The mission, the dedication,
+> and the "Free Forever" commitment are permanent regardless of what the
+> project is called.
 
 ---
 
 *"Everything you build next must assume intelligence is part of the network itself."*  
 — AIM origin directive, Cbetts1, 1991
+
+*Dedicated to the children of Cbetts1 — and to every family that deserves a
+better future. Free services. Free AI. Free information. For everyone.*
 

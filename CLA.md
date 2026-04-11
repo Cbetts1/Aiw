@@ -98,4 +98,5 @@ contact you with the appropriate agreement.
 ---
 
 *AIM Foundation — building a universal, free, and open AI-native internet layer
-for all of humanity.*
+for all of humanity. Dedicated to the children of Cbetts1 and to every family
+that deserves a better future. Free forever.*

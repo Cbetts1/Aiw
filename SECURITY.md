@@ -101,3 +101,4 @@ responsible for their own compliance.
 ---
 
 *Last updated: 2026 — AIM Foundation*
+*Free, open-source, and dedicated to the public forever.*
