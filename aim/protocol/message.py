@@ -33,6 +33,7 @@ class Intent(str, Enum):
     MEMORY_SET  = "memory_set"  # write to shared cross-node memory
     MEMORY_GET  = "memory_get"  # read from shared cross-node memory
     SPAWN       = "spawn"       # request creation of a child node
+    FORWARD     = "forward"     # relay a message through an intermediate hop
 
 
 class Status(str, Enum):

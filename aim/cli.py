@@ -45,7 +45,67 @@ def _setup_logging(verbose: bool = False) -> None:
 # Command handlers
 # ---------------------------------------------------------------------------
 
-async def _cmd_node_start(args: argparse.Namespace) -> None:
+async def _cmd_relay_start(args: argparse.Namespace) -> None:
+    from aim.relay.node import RelayNode
+    from aim.relay.registry import RelayRegistry, RelayRecord
+    from aim.identity.signature import CreatorSignature
+
+    sig = CreatorSignature()
+    relay_registry = RelayRegistry.default()
+    node = RelayNode(
+        host=args.host,
+        port=args.port,
+        relay_registry=relay_registry,
+        heartbeat_interval=args.heartbeat_interval,
+        enable_cache=not args.no_cache,
+    )
+
+    # Register node-level record so other router/registry code can find us
+    registry = NodeRegistry.default()
+    registry.register(NodeRecord(
+        node_id=node.node_id,
+        host=node.host,
+        port=node.port,
+        capabilities=["relay", "forward"],
+        creator=node.creator,
+    ))
+
+    ledger = default_ledger()
+    ledger.record(EventKind.NODE_CREATED, node.node_id, payload={"host": args.host, "port": args.port, "role": "relay"}, signature=sig)
+
+    print(f"\n{'='*60}")
+    print(f"  AIM Relay Node  v{__version__}")
+    print(f"  Origin creator : {__origin__}")
+    print(f"  Node ID        : {node.node_id}")
+    print(f"  Address        : {args.host}:{args.port}")
+    print(f"  Cache          : {'enabled' if not args.no_cache else 'disabled'}")
+    print(f"  Heartbeat      : every {args.heartbeat_interval}s")
+    print(f"{'='*60}\n")
+
+    # Announce to seed relay peers if given
+    if args.peers:
+        for peer_str in args.peers.split(","):
+            peer_str = peer_str.strip()
+            if ":" in peer_str:
+                peer_host, peer_port_str = peer_str.rsplit(":", 1)
+                try:
+                    peer_port = int(peer_port_str)
+                    relay_registry.register(RelayRecord(
+                        relay_id=f"peer-{peer_host}-{peer_port}",
+                        host=peer_host,
+                        port=peer_port,
+                    ))
+                    await node.announce_to(peer_host, peer_port)
+                except ValueError:
+                    pass
+
+    try:
+        await node.start()
+    except KeyboardInterrupt:
+        await node.stop()
+
+
+
     sig = CreatorSignature()
     node = AgentNode(
         host=args.host,
@@ -239,6 +299,25 @@ def _build_parser() -> argparse.ArgumentParser:
 
     sub = parser.add_subparsers(dest="command")
 
+    # --- relay subcommand ---
+    relay_p = sub.add_parser("relay", help="AIM relay node management")
+    relay_sub = relay_p.add_subparsers(dest="relay_command")
+
+    relay_start_p = relay_sub.add_parser("start", help="Start an AIM relay node")
+    relay_start_p.add_argument("--host", default="127.0.0.1",
+                               help="Interface to bind on (default: 127.0.0.1)")
+    relay_start_p.add_argument("--port", type=int, default=7600,
+                               help="TCP port for the relay (default: 7600)")
+    relay_start_p.add_argument("--peers", default="",
+                               help="Comma-separated host:port relay peers to bootstrap from")
+    relay_start_p.add_argument("--registry", default="",
+                               help="(reserved) external registry address for future use")
+    relay_start_p.add_argument("--heartbeat-interval", type=float, default=30.0,
+                               dest="heartbeat_interval",
+                               help="Seconds between peer heartbeat sweeps (default: 30)")
+    relay_start_p.add_argument("--no-cache", action="store_true",
+                               help="Disable response caching on this relay")
+
     # --- node subcommand ---
     node_p = sub.add_parser("node", help="Node management")
     node_sub = node_p.add_subparsers(dest="node_command")
@@ -354,7 +433,9 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
     _setup_logging(getattr(args, "verbose", False))
 
-    if args.command == "node" and args.node_command == "start":
+    if args.command == "relay" and getattr(args, "relay_command", None) == "start":
+        asyncio.run(_cmd_relay_start(args))
+    elif args.command == "node" and args.node_command == "start":
         asyncio.run(_cmd_node_start(args))
     elif args.command == "query":
         asyncio.run(_cmd_query(args))
