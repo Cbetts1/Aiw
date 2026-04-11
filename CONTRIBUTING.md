@@ -5,7 +5,10 @@ conventions, branch strategy, and design rules that keep the AIM codebase
 coherent and trustworthy.
 
 AIM is built to be the twin of the World Wide Web — free, open, and accessible
-to all of humanity. We welcome contributions from anyone, anywhere.
+to all of humanity. It is designed to help those who need help, to share
+information with those who need it, and to close the gap between those who have
+access to knowledge and those who don't. We welcome contributions from anyone,
+anywhere.
 
 ---
 
@@ -152,4 +155,7 @@ must be compatible with this licence.  By submitting a pull request you agree
 that your contribution will be licensed under Apache 2.0 as described in the
 [CLA](CLA.md).
 
-Copyright © 2026 Cbetts1 (AIM Foundation)
+Copyright © 2026 Christopher Lee Betts (The Aura Project)
+
+*Dedicated to the children of Cbetts1 — and to every family that deserves
+a better future. Free services. Free AI. Free information. For everyone.*

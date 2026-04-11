@@ -1,9 +1,9 @@
-# AIM Foundation — Contributor Covenant Code of Conduct
+# The Aura Project — Contributor Covenant Code of Conduct
 
 ## Our Pledge
 
 In the interest of fostering an open, welcoming, and universally accessible
-environment, we as contributors, maintainers, and members of the AIM Foundation
+environment, we as contributors, maintainers, and members of The Aura Project
 pledge to make participation in the AIM project and our community a
 harassment-free experience for everyone — regardless of age, body size,
 disability, ethnicity, gender identity and expression, level of experience,
@@ -11,7 +11,9 @@ nationality, personal appearance, race, religion, or sexual identity and
 orientation.
 
 AIM is built to be the twin of the World Wide Web: free, open, and accessible
-to all of humanity. Our community standards reflect that mission.
+to all of humanity. It is designed to help those in need, to share information
+freely, and to close the gap between those who have knowledge and those who
+don't. Our community standards reflect that mission.
 
 ## Our Standards
 
@@ -36,7 +38,7 @@ Examples of unacceptable behaviour:
 
 ## Our Responsibilities
 
-Project maintainers and AIM Foundation stewards are responsible for clarifying
+Project maintainers and The Aura Project stewards are responsible for clarifying
 the standards of acceptable behaviour and are expected to take appropriate and
 fair corrective action in response to any instances of unacceptable behaviour.
 
@@ -57,7 +59,7 @@ representative at an online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behaviour may be
-reported by opening a confidential issue or contacting the AIM Foundation
+reported by opening a confidential issue or contacting The Aura Project
 stewards at **conduct@aim-mesh.org** (once the foundation domain is
 operational). All complaints will be reviewed and investigated promptly and
 fairly, and will result in a response that is deemed necessary and appropriate to

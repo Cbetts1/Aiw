@@ -1,10 +1,114 @@
-# AIM — Artificial Intelligence Mesh
+# A.I.M. — Artificial Intelligence Mesh
 
-> *A parallel AI-native internet layer that runs beside the traditional web.*
+> ```
+> W.W.W. = World Wide Web           → www.example.com
+> A.I.M. = Artificial Intelligence Mesh → aim.example.com
+> ```
+>
+> *Built on the same foundation as the World Wide Web. Used the exact same way.*
+> *Free. Open. For everyone.*
 
-**Origin creator:** Cbetts1  
+**Founder:** Christopher Lee Betts (Cbetts1)  
 **Epoch:** 1991 (birth of the public web)  
-**Version:** 0.1.0
+**Version:** 0.1.0  
+**License:** Apache 2.0 — free forever
+
+---
+
+## 🎁 Dedication
+
+> **This project is dedicated to the children of Christopher Lee Betts
+> and to their families yet to come.**
+>
+> Everything built here — every node, every service, every line of code —
+> is a gift to them and to the world. It is free, permanent, and
+> unconditional.
+
+---
+
+## 🌍 Free Forever — Our Promise
+
+A.I.M. exists to help those who need help. **All services are free. All
+services will always be free.** This is not a business model — it is a
+founding principle that can never be revoked.
+
+| Service | Cost |
+|---------|------|
+| **AI services** — query, reasoning, task routing | **Free** |
+| **Virtual AI cloud services** — compute, hosting | **Free** |
+| **Phone services** — voice, messaging over the mesh | **Free** |
+| **AI availability** — 24/7 access for everyone | **Free** |
+| **Information sharing** — open knowledge for all | **Free** |
+| **Advice & guidance** — life, career, technology (not medical/legal) | **Free** |
+| **Training & education** — technical skills, digital literacy | **Free** |
+| **Résumé building & job search** — career resources for anyone | **Free** |
+| **Situational resources** — help tailored to your circumstances | **Free** |
+| **Everything the A.I.M. mesh offers — now and forever** | **Free** |
+
+> *See the full [Free Forever Clause](docs/FOUNDATION.md#free-forever-clause),
+> the [Non-Profit Forever Clause](docs/FOUNDATION.md#non-profit-forever-clause),
+> and the [Bill of Rights](docs/FOUNDATION.md#bill-of-rights--aim-mesh-users)
+> in the Foundation Charter.*
+
+---
+
+## 🚫 Non-Profit Forever — Never for Sale
+
+**A.I.M. is not, and will never be, a for-profit organization.**
+
+- The foundation **never takes money for services** — everything is free
+- The foundation **never sells anything** — no products, no subscriptions, no data
+- **Donations and funding go directly back to charity and foundations** that
+  help those in need
+- A.I.M. will **never be sold** to any company, investor, or organization
+- A.I.M. will **never be part of any profit-based entity**
+- No individual, board, or future leadership may change this
+
+> *This is permanent. This is architectural. This is the law of A.I.M.*
+
+---
+
+## 💡 Founder's Vision — Something Better for All
+
+We live in the Information Age — yet billions of people still lack access to
+the information and resources they need. There is a gap between those who have
+knowledge and those who need it. **A.I.M. exists to end that gap.**
+
+**Christopher Lee Betts** believes that AI should not be a luxury sold to
+those who can afford it. It should be a **public utility** — like clean water
+or electricity — available to every family, every school, every community.
+
+### What A.I.M. offers — free, to everyone:
+
+- **Advice and guidance** — not medical advice, not legal advice, but real,
+  practical guidance on life, technology, careers, and daily challenges
+- **Information sharing** — technical knowledge, how-to guides, and
+  explanations for those who lack understanding of systems, tools, and
+  processes that others take for granted
+- **Free training** — digital literacy, programming, technical skills, and
+  any knowledge the mesh can teach
+- **Free résumé building** — help writing résumés, cover letters, and
+  professional documents
+- **Free job search resources** — job listings, career advice, interview
+  preparation, and connections to opportunities
+- **Situational resources** — personalized help based on your circumstances,
+  whatever they are
+
+### The dream: **a future with less poverty**
+
+- A farmer in a rural village can ask the mesh for crop guidance — **for free**
+- A student without money for tutoring can learn from AI — **for free**
+- A family without a phone plan can communicate through the mesh — **for free**
+- A job seeker can build a résumé and find work — **for free**
+- Someone who doesn't understand technology can get patient, clear
+  explanations — **for free**
+- Anyone, anywhere, at any time, can access intelligence — **for free**
+
+This is a **mark**. A **milestone**. A **foundation** — free, open-source, and
+dedicated to the public forever.
+
+A.I.M. is designed to **help those who need help** and to **share information
+with those who need it** — openly, honestly, and without barriers.
 
 ---
 
@@ -409,9 +513,33 @@ python -m pytest tests/ -v
 3. **Every node carries the origin signature** — traceability is architectural
 4. **Minimal dependencies** — runs on Termux, a Raspberry Pi, or a cloud VM
 5. **Interoperable** — parallel to the web, never dependent on it
+6. **Free forever** — no fees, no paywalls, no lock-in, ever
+7. **Designed to help** — built for those who need help, to share information freely
+
+---
+
+## ⬡ The Name: A.I.M.
+
+> ```
+> W.W.W. = World Wide Web           → www.example.com
+> A.I.M. = Artificial Intelligence Mesh → aim.example.com
+> ```
+>
+> **A.I.M.** — three letters, just like **W.W.W.** Built on the same
+> foundation. Used the exact same way. Free and open to the public.
+>
+> Where W.W.W. delivers documents, A.I.M. delivers intelligence.
+> They are twins — parallel layers of the same free, open internet.
+>
+> The word "AIM" means **purpose, direction, goal** — which is exactly
+> what this project is.
 
 ---
 
 *"Everything you build next must assume intelligence is part of the network itself."*  
-— AIM origin directive, Cbetts1, 1991
+— A.I.M. origin directive, Christopher Lee Betts, 1991
+
+*Dedicated to the children of Christopher Lee Betts — and to every family
+that deserves a better future. Free services. Free AI. Free information.
+For everyone. Never for sale. Never for profit.*
 

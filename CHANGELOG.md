@@ -10,6 +10,11 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Dedication** — project dedicated to the children of Cbetts1 and their future families
+- **Free Forever Clause** — irrevocable commitment: all AIM services are free, forever
+- **Bill of Rights** — 11 rights for all AIM mesh users (no fees, no tracking, free AI, free training, free career help)
+- **Founder's Vision** — "Something Better for All" — mission to close the information gap, reduce poverty, and provide free AI/training/résumé/job-search services
+- **Expanded Foundation Charter** (v2.0) — incorporation guidance, trademark roadmap, governance updates
 - `aim/web/` — HTTP/browser gateway layer (Phase 1)
 - `aim web start` CLI command
 - `CHANGELOG.md`, `CONTRIBUTING.md`, `LICENSE`
