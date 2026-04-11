@@ -4,7 +4,7 @@
 |-------------|-------------------------------------------|
 | Number      | AIM-RFC-0002                              |
 | Title       | Node Identity, Creator Signature & PKI    |
-| Author(s)   | Cbetts1 (AIM Foundation)                  |
+| Author(s)   | Cbetts1 (The Aura Project)                  |
 | Status      | FINAL                                     |
 | Created     | 2026-04-11                                |
 | Updated     | 2026-04-11                                |

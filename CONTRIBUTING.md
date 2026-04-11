@@ -155,7 +155,7 @@ must be compatible with this licence.  By submitting a pull request you agree
 that your contribution will be licensed under Apache 2.0 as described in the
 [CLA](CLA.md).
 
-Copyright © 2026 Cbetts1 (AIM Foundation)
+Copyright © 2026 Christopher Lee Betts (The Aura Project)
 
 *Dedicated to the children of Cbetts1 — and to every family that deserves
 a better future. Free services. Free AI. Free information. For everyone.*

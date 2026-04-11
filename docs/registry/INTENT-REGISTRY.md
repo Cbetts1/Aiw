@@ -1,6 +1,6 @@
 # AIM Intent Registry
 
-**Maintainer:** AIM Foundation Protocol Working Group  
+**Maintainer:** The Aura Project Protocol Working Group  
 **Version:** 1.0 — 2026
 
 This registry lists all **official AIM Intent types** that conformant
@@ -60,7 +60,7 @@ process (see [docs/governance/RFC-PROCESS.md](../governance/RFC-PROCESS.md)).
 ## Extension Intents (Vendor/Community)
 
 The following table tracks community-registered extension intents. These are
-not part of the core specification and do not require AIM Foundation approval.
+not part of the core specification and do not require The Aura Project approval.
 
 | Intent (prefixed)       | Registrant     | Description |
 |-------------------------|----------------|-------------|

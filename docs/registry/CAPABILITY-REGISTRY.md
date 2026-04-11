@@ -1,6 +1,6 @@
 # AIM Node Capability Registry
 
-**Maintainer:** AIM Foundation Protocol Working Group  
+**Maintainer:** The Aura Project Protocol Working Group  
 **Version:** 1.0 — 2026
 
 This registry lists standardised **capability tags** that AIM nodes may

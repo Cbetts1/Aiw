@@ -18,8 +18,8 @@ Report vulnerabilities privately using one of the following channels:
 
 1. **GitHub Private Security Advisory** — click *"Report a vulnerability"* on
    the [Security tab](../../security/advisories/new) of this repository.
-2. **Email** — send details to **security@aim-mesh.org** (once the foundation
-   domain is operational). Encrypt with the AIM Foundation PGP key if available.
+2. **Email** — send details to **security@theauraproject.org** (once the foundation
+   domain is operational). Encrypt with The Aura Project PGP key if available.
 
 ### What to Include
 
@@ -50,7 +50,7 @@ AIM Hall of Fame (published in `SECURITY_HALL_OF_FAME.md`) and a mention in
 the release notes.
 
 A formal monetary bounty programme via HackerOne or equivalent will be
-announced once the AIM Foundation is formally incorporated.
+announced once The Aura Project is formally incorporated.
 
 ### Severity Classification
 
@@ -100,5 +100,5 @@ responsible for their own compliance.
 
 ---
 
-*Last updated: 2026 — AIM Foundation*
+*Last updated: 2026 — The Aura Project*
 *Free, open-source, and dedicated to the public forever.*

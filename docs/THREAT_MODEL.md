@@ -66,7 +66,7 @@ task routing, poison the `NodeRegistry`, or dominate ANS registrations.
   the HMAC key is public (`Cbetts1/AIM`), this is computationally trivial
   without stronger identity.
 - The `ProtectionAgent` (AIM City) monitors registry for anomalous patterns.
-- The AIM Foundation's public blacklist names known Sybil clusters.
+- The Aura Project's public blacklist names known Sybil clusters.
 
 **Planned improvement:** Ed25519 key pairs (AIM-RFC-0002 §2.3) with a
 proof-of-work or social-attestation registration step for public ANS names.
@@ -117,7 +117,7 @@ other nodes.
 - Nodes SHOULD implement per-IP and per-node-ID rate limiting.
 - The web bridge caps request body size at 1 MiB and enforces connection
   timeouts (10 seconds).
-- AIM Foundation seed nodes apply network-level rate limiting.
+- The Aura Project seed nodes apply network-level rate limiting.
 
 ---
 
@@ -182,4 +182,4 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md).
 
 ---
 
-*AIM Foundation — 2026*
+*The Aura Project — 2026*

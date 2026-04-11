@@ -1,8 +1,8 @@
-# AIM Foundation — Privacy Policy
+# The Aura Project — Privacy Policy
 
 **Version 1.0 — 2026**
 
-The AIM Foundation ("we", "us", or "our") is committed to protecting the
+The Aura Project ("we", "us", or "our") is committed to protecting the
 privacy of everyone who uses the AIM (Artificial Intelligence Mesh) protocol,
 software, and public infrastructure. This policy explains what data may be
 collected, how it is used, and your rights under applicable law.
@@ -14,13 +14,13 @@ collected, how it is used, and your rights under applicable law.
 This policy applies to:
 
 1. The AIM reference software (`aim` Python package) when operated by the
-   AIM Foundation on public infrastructure.
+   The Aura Project on public infrastructure.
 2. The AIM web bridge (`aim web start`) when hosted at foundation-operated
    domains.
-3. The public AIM seed nodes and ANS resolver operated by the AIM Foundation.
+3. The public AIM seed nodes and ANS resolver operated by The Aura Project.
 
 **Operators running their own AIM nodes** are independently responsible for
-their own privacy practices. The AIM Foundation is not responsible for data
+their own privacy practices. The Aura Project is not responsible for data
 collected by third-party nodes.
 
 ---
@@ -96,7 +96,7 @@ you have the right to:
 - **Non-discrimination** — CCPA: you have the right not to be discriminated
   against for exercising your privacy rights
 
-To exercise any of these rights, contact **privacy@aim-mesh.org** (once the
+To exercise any of these rights, contact **privacy@theauraproject.org** (once the
 foundation domain is operational).
 
 ---
@@ -111,7 +111,7 @@ principle, not merely a policy.
 
 ## 6. Data Transfers
 
-The AIM Foundation operates globally. Data processed in connection with
+The Aura Project operates globally. Data processed in connection with
 foundation-operated infrastructure may be transferred between jurisdictions.
 Where required by law, we implement appropriate safeguards (e.g. Standard
 Contractual Clauses for EEA → non-EEA transfers).
@@ -137,8 +137,8 @@ updated policy.
 
 ## 9. Contact
 
-Privacy enquiries: **privacy@aim-mesh.org**
-AIM Foundation repository: https://github.com/Cbetts1/Aiw
+Privacy enquiries: **privacy@theauraproject.org**
+The Aura Project repository: https://github.com/Cbetts1/Aiw
 
 ---
 

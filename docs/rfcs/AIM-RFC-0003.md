@@ -4,7 +4,7 @@
 |-------------|-----------------------------------------------|
 | Number      | AIM-RFC-0003                                  |
 | Title       | NodeRegistry, Peer Discovery & AIM Name Service |
-| Author(s)   | Cbetts1 (AIM Foundation)                      |
+| Author(s)   | Cbetts1 (The Aura Project)                      |
 | Status      | FINAL                                         |
 | Created     | 2026-04-11                                    |
 | Updated     | 2026-04-11                                    |
@@ -94,11 +94,11 @@ Upon receiving an `ANNOUNCE`, a node:
 
 ### 2.4 Seed Nodes
 
-Seed nodes are well-known public AIM nodes operated by the AIM Foundation.
+Seed nodes are well-known public AIM nodes operated by The Aura Project.
 They act as entry points for new nodes joining the mesh.
 
 The reference implementation ships with the following default seed nodes
-(subject to change; check the AIM Foundation website for the current list):
+(subject to change; check The Aura Project website for the current list):
 
 ```
 seed-us.aim-mesh.org:7700
@@ -158,7 +158,7 @@ Rules:
 #### 2.5.4 ANS Registration
 
 Names MAY be registered free of charge via the public ANS resolver operated
-by the AIM Foundation. Registration requires:
+by The Aura Project. Registration requires:
 
 - A valid `NodeRecord` with a reachable `host:port`.
 - The `creator` field matching the registrant's identity.

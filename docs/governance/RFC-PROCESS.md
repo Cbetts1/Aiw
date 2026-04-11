@@ -42,7 +42,7 @@ DRAFT → LAST_CALL → ACCEPTED → FINAL
 |-------|---------|
 | `DRAFT` | Open for community discussion; not stable |
 | `LAST_CALL` | 14-day final comment period; maintainers signal readiness to decide |
-| `ACCEPTED` | Approved by the AIM Foundation stewards; implementation may begin |
+| `ACCEPTED` | Approved by The Aura Project stewards; implementation may begin |
 | `FINAL` | Reference implementation merged; spec is normative |
 | `REJECTED` | Not accepted; reasons documented in the RFC |
 | `WITHDRAWN` | Author withdrew the proposal |
@@ -96,7 +96,7 @@ comment period on the mailing list and in the GitHub Discussion.
 
 ### Step 6 — Decision
 
-After the `LAST_CALL` period, the AIM Foundation stewards make a final
+After the `LAST_CALL` period, The Aura Project stewards make a final
 decision: `ACCEPTED`, `REJECTED`, or extend the review with a new `LAST_CALL`.
 
 ### Step 7 — Implementation & Finalisation
@@ -177,7 +177,7 @@ This document uses the following normative keywords as defined by
 
 ## Governance & Appeals
 
-Decisions made by AIM Foundation stewards may be appealed by opening a new
+Decisions made by The Aura Project stewards may be appealed by opening a new
 GitHub Discussion with the title `[APPEAL] AIM-RFC-NNNN`. The appeal is
 reviewed by a panel of at least three stewards who were not involved in the
 original decision.
@@ -188,4 +188,4 @@ IETF and W3C.
 
 ---
 
-*AIM Foundation — open governance for a universal AI-native internet layer.*
+*The Aura Project — open governance for a universal AI-native internet layer.*

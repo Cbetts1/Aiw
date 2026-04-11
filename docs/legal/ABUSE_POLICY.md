@@ -1,10 +1,10 @@
-# AIM Foundation — Abuse Policy
+# The Aura Project — Abuse Policy
 
 **Version 1.0 — 2026**
 
 The AIM (Artificial Intelligence Mesh) is built to be universally accessible
 and free for all of humanity — the same ethos that guided the World Wide Web.
-To protect that openness, the AIM Foundation maintains this Abuse Policy.
+To protect that openness, The Aura Project maintains this Abuse Policy.
 
 ---
 
@@ -34,9 +34,9 @@ The AIM protocol, public infrastructure, and software MUST NOT be used to:
 
 ## 2. Reporting Abuse
 
-To report abuse of AIM Foundation infrastructure:
+To report abuse of The Aura Project infrastructure:
 
-- **Email**: abuse@aim-mesh.org (once the foundation domain is operational)
+- **Email**: abuse@theauraproject.org (once the foundation domain is operational)
 - **GitHub issue**: Open an issue titled `[ABUSE REPORT] Brief description`
   in the repository
 
@@ -68,11 +68,11 @@ network-level blocks for persistent abusers.
 
 ## 4. Blacklisting
 
-A node may be added to the **AIM Foundation Blacklist** if it is found to be
+A node may be added to the **Aura Project Blacklist** if it is found to be
 engaged in any prohibited use listed in Section 1.
 
 Blacklist entries are:
-- Published in the AIM Foundation's public blacklist feed.
+- Published in The Aura Project's public blacklist feed.
 - Signed by the Foundation's Ed25519 key so that automated enforcement is
   possible.
 - Subject to appeal (see Section 5).
@@ -91,7 +91,7 @@ appeal by:
 2. Providing evidence that the flagged activity was a false positive or has
    been remediated.
 
-Appeals are reviewed by at least two AIM Foundation stewards within **14 days**.
+Appeals are reviewed by at least two The Aura Project stewards within **14 days**.
 Decisions may be appealed once more to the full Foundation board.
 
 ---
@@ -101,7 +101,7 @@ Decisions may be appealed once more to the full Foundation board.
 Security researchers acting in good faith to improve AIM are exempt from this
 policy provided they:
 
-- Report findings to **security@aim-mesh.org** before public disclosure.
+- Report findings to **security@theauraproject.org** before public disclosure.
 - Do not disrupt real users or operators.
 - Follow the responsible disclosure process in [SECURITY.md](../../SECURITY.md).
 
@@ -115,4 +115,4 @@ their own compliance with applicable laws.
 
 ---
 
-*AIM Foundation — keeping the mesh open for everyone.*
+*The Aura Project — keeping the mesh open for everyone.*

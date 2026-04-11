@@ -1,8 +1,8 @@
-# AIM Foundation — DMCA & Copyright Policy
+# The Aura Project — DMCA & Copyright Policy
 
 **Version 1.0 — 2026**
 
-The AIM Foundation respects the intellectual property rights of others and
+The Aura Project respects the intellectual property rights of others and
 expects those using AIM infrastructure to do the same.
 
 ---
@@ -11,7 +11,7 @@ expects those using AIM infrastructure to do the same.
 
 This policy applies to **content stored in node knowledge bases** (e.g. rules
 added via `node.engine.add_rule()` or `EducationBot` lessons) that are
-served through AIM Foundation-operated infrastructure.
+served through The Aura Project-operated infrastructure.
 
 It does not apply to:
 - Content on nodes operated by independent third parties.
@@ -22,7 +22,7 @@ It does not apply to:
 
 ## 2. DMCA Takedown Requests (US)
 
-If you believe that content accessible through AIM Foundation-operated
+If you believe that content accessible through The Aura Project-operated
 infrastructure infringes your copyright, you may submit a takedown notice
 under the Digital Millennium Copyright Act (DMCA), 17 U.S.C. § 512.
 
@@ -45,7 +45,7 @@ Your notice MUST include:
 
 ### 2.2 Where to Send
 
-**Email (preferred)**: dmca@aim-mesh.org (once the foundation domain is
+**Email (preferred)**: dmca@theauraproject.org (once the foundation domain is
 operational)
 
 **GitHub issue**: Open a **private** security advisory (not a public issue)
@@ -75,7 +75,7 @@ removal was in error, you may submit a counter-notification including:
 
 ## 4. Repeat Infringers
 
-The AIM Foundation will terminate access to foundation-operated infrastructure
+The Aura Project will terminate access to foundation-operated infrastructure
 for users or node operators who are found to be repeat infringers.
 
 ---
@@ -86,7 +86,7 @@ Operators in jurisdictions outside the United States should consult local
 counsel for equivalent notice-and-takedown mechanisms (e.g. the EU Copyright
 Directive Article 17, UK CDPA 1988).
 
-The AIM Foundation will cooperate with legitimate legal requests from any
+The Aura Project will cooperate with legitimate legal requests from any
 jurisdiction, subject to applicable law.
 
 ---
@@ -95,9 +95,9 @@ jurisdiction, subject to applicable law.
 
 The AIM reference implementation, protocol specifications, and all foundation-
 published documentation are licensed under the Apache License 2.0. Copyright
-in these materials belongs to the AIM Foundation and Cbetts1. Unauthorised
+in these materials belongs to The Aura Project and Cbetts1. Unauthorised
 use outside the terms of Apache 2.0 may constitute infringement.
 
 ---
 
-*This policy was last updated: 2026-04-11 — AIM Foundation*
+*This policy was last updated: 2026-04-11 — The Aura Project*
