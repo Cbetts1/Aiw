@@ -6,12 +6,15 @@ Routing strategies
 FIRST       : send to the first capable node found
 ROUND_ROBIN : cycle through capable nodes in order
 BROADCAST   : send to all capable nodes (fire-and-forget)
+RELAY       : route through a healthy relay node as an intermediate hop
+              (used for cross-subnet / cross-region traffic)
 """
 
 from __future__ import annotations
 
 import asyncio
 import itertools
+import json
 import logging
 from enum import Enum
 from typing import Any
@@ -26,6 +29,7 @@ class RoutingStrategy(str, Enum):
     FIRST       = "first"
     ROUND_ROBIN = "round_robin"
     BROADCAST   = "broadcast"
+    RELAY       = "relay"
 
 
 class TaskRouter:
@@ -34,18 +38,21 @@ class TaskRouter:
 
     Parameters
     ----------
-    registry : the NodeRegistry to query for capable nodes
-    strategy : default routing strategy
+    registry        : the NodeRegistry to query for capable nodes
+    strategy        : default routing strategy
+    relay_registry  : optional RelayRegistry; required when strategy=RELAY
     """
 
     def __init__(
         self,
         registry: NodeRegistry | None = None,
         strategy: RoutingStrategy = RoutingStrategy.FIRST,
+        relay_registry: Any | None = None,
     ) -> None:
         self._registry = registry or NodeRegistry.default()
         self._strategy = strategy
         self._rr_counters: dict[str, int] = {}  # capability → next index
+        self._relay_registry = relay_registry
 
     # ------------------------------------------------------------------
     # Public API
@@ -86,10 +93,17 @@ class TaskRouter:
         targets = self._select_targets(candidates, cap, strat)
 
         msg = AIMMessage.task(task_name, args or {}, sender_id=sender_id)
-        responses = await asyncio.gather(
-            *[self._dispatch(msg, node, timeout) for node in targets],
-            return_exceptions=True,
-        )
+
+        if strat == RoutingStrategy.RELAY:
+            responses = await asyncio.gather(
+                *[self._dispatch_via_relay(msg, node, timeout) for node in targets],
+                return_exceptions=True,
+            )
+        else:
+            responses = await asyncio.gather(
+                *[self._dispatch(msg, node, timeout) for node in targets],
+                return_exceptions=True,
+            )
         results: list[AIMMessage] = []
         for r in responses:
             if isinstance(r, AIMMessage):
@@ -110,7 +124,7 @@ class TaskRouter:
     ) -> list[NodeRecord]:
         if strategy == RoutingStrategy.BROADCAST:
             return candidates
-        if strategy == RoutingStrategy.FIRST:
+        if strategy in (RoutingStrategy.FIRST, RoutingStrategy.RELAY):
             return [candidates[0]]
         # ROUND_ROBIN
         idx = self._rr_counters.get(capability, 0) % len(candidates)
@@ -145,3 +159,69 @@ class TaskRouter:
                 await writer.wait_closed()
             except Exception:
                 pass
+
+    async def _dispatch_via_relay(
+        self, msg: AIMMessage, node: NodeRecord, timeout: float
+    ) -> AIMMessage | None:
+        """
+        Route *msg* to *node* through a healthy relay from the relay registry.
+
+        Falls back to direct dispatch if no relay is available.
+        """
+        from aim.node.base import _send_message, _recv_message
+
+        relay_reg = self._relay_registry
+        relay = None
+        if relay_reg is not None:
+            relay = relay_reg.pick_round_robin()
+
+        if relay is None:
+            logger.debug("No healthy relay found, falling back to direct dispatch")
+            return await self._dispatch(msg, node, timeout)
+
+        # Build a FORWARD envelope targeting *node*
+        forward_msg = AIMMessage(
+            intent=Intent.FORWARD,
+            payload={
+                "target_host": node.host,
+                "target_port": node.port,
+                "message": json.loads(msg.to_json()),
+            },
+            sender_id=msg.sender_id,
+            ttl=msg.ttl,
+        )
+
+        try:
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(relay.host, relay.port), timeout=timeout
+            )
+        except (OSError, asyncio.TimeoutError) as exc:
+            logger.warning(
+                "Cannot reach relay %s: %s — falling back to direct", relay.relay_id[:8], exc
+            )
+            return await self._dispatch(msg, node, timeout)
+
+        try:
+            await _send_message(writer, forward_msg)
+            relay_response = await asyncio.wait_for(_recv_message(reader), timeout=timeout)
+        except asyncio.TimeoutError:
+            logger.warning("Timeout from relay %s", relay.relay_id[:8])
+            return await self._dispatch(msg, node, timeout)
+        finally:
+            writer.close()
+            try:
+                await writer.wait_closed()
+            except Exception:
+                pass
+
+        if relay_response is None:
+            return await self._dispatch(msg, node, timeout)
+
+        # Unwrap the response that the relay proxied from the target node
+        inner = relay_response.payload.get("result", {}).get("response")
+        if isinstance(inner, dict):
+            try:
+                return AIMMessage.from_json(json.dumps(inner))
+            except Exception:
+                pass
+        return relay_response

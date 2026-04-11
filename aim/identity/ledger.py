@@ -22,12 +22,16 @@ from .signature import CreatorSignature, ORIGIN_CREATOR, AIM_MESH_NAME
 
 
 class EventKind(str, Enum):
-    NODE_CREATED  = "node_created"
-    NODE_STOPPED  = "node_stopped"
-    TASK_EXECUTED = "task_executed"
+    NODE_CREATED   = "node_created"
+    NODE_STOPPED   = "node_stopped"
+    TASK_EXECUTED  = "task_executed"
     MESSAGE_ROUTED = "message_routed"
     PEER_CONNECTED = "peer_connected"
     MEMORY_SHARED  = "memory_shared"
+    RELAY_STARTED  = "relay_started"
+    RELAY_STOPPED  = "relay_stopped"
+    RELAY_FORWARD  = "relay_forward"
+    RELAY_HEARTBEAT = "relay_heartbeat"
     CUSTOM         = "custom"
     # Mesh subsystem events
     GATEWAY_CONNECTED    = "gateway_connected"
