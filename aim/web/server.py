@@ -6,11 +6,21 @@ Endpoints
 GET  /                          Serve the browser UI (index.html)
 GET  /directory                 Serve the site/tools directory page
 GET  /legal                     Serve the legal / policy page
+GET  /health                    Health check → JSON
 GET  /api/query?q=…&host=…&port=… Forward a QUERY to an AIM node → JSON
 GET  /api/status?host=…&port=…    Forward a HEARTBEAT → JSON
 GET  /api/info                    Return server / version info → JSON
 GET  /api/directory               List all registered sites/tools → JSON
 POST /api/directory               Submit a new site/tool → JSON
+GET  /api/posts?limit=…           List community feed posts → JSON
+POST /api/posts                   Submit a new community post → JSON
+GET  /api/ans?name=…              Look up an ANS name → JSON
+GET  /api/vcloud                  List virtual compute resources → JSON
+POST /api/vcloud                  Create a virtual resource → JSON
+DELETE /api/vcloud?id=…           Destroy a virtual resource → JSON
+GET  /api/dns/resolve?name=…      Resolve a name via DNS bridge → JSON
+GET  /api/dns/records             List all ANS records → JSON
+POST /api/dns/register            Register a DNS hostname as ANS record → JSON
 
 All responses include CORS and security headers.
 """
@@ -20,10 +30,14 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
+import signal
 import time
 import urllib.parse
 import uuid
+from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 from aim import __version__, __origin__
 from aim.node.base import _send_message, _recv_message
@@ -32,10 +46,23 @@ from aim.ans.registry import ANSRegistry
 
 logger = logging.getLogger(__name__)
 
-_STATIC_DIR  = Path(__file__).parent / "static"
-_DATA_DIR    = Path(__file__).parent / "data"
-_DIR_FILE    = _DATA_DIR / "directory.json"
-_POSTS_FILE  = _DATA_DIR / "posts.json"
+_STATIC_DIR = Path(__file__).parent / "static"
+
+# ---------------------------------------------------------------------------
+# Configurable data directory
+# ---------------------------------------------------------------------------
+# Operators can set AIM_DATA_DIR to any writable path.
+# Defaults to ~/.local/share/aim/ so data survives package upgrades.
+
+def _resolve_data_dir() -> Path:
+    env = os.environ.get("AIM_DATA_DIR", "").strip()
+    if env:
+        return Path(env)
+    return Path.home() / ".local" / "share" / "aim"
+
+_DATA_DIR   = _resolve_data_dir()
+_DIR_FILE   = _DATA_DIR / "directory.json"
+_POSTS_FILE = _DATA_DIR / "posts.json"
 
 # Ensure data directory and files exist at import time
 _DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -43,6 +70,36 @@ if not _DIR_FILE.exists():
     _DIR_FILE.write_text("[]")
 if not _POSTS_FILE.exists():
     _POSTS_FILE.write_text("[]")
+
+# ---------------------------------------------------------------------------
+# Common response fragments
+# ---------------------------------------------------------------------------
+
+_METHOD_NOT_ALLOWED   = json.dumps({"error": "method not allowed"})
+_RATE_LIMIT_EXCEEDED  = json.dumps({"error": "Rate limit exceeded. Please slow down."})
+
+# ---------------------------------------------------------------------------
+# Per-IP rate limiting (for POST endpoints)
+# ---------------------------------------------------------------------------
+
+_RATE_WINDOW_SECONDS = 60
+_RATE_MAX_POSTS      = 10   # max POST requests per IP per window
+
+# {ip: [(timestamp, …), …]}
+_rate_buckets: dict[str, list[float]] = defaultdict(list)
+
+
+def _check_rate_limit(ip: str) -> bool:
+    """Return True if the IP is within its rate limit, False if exceeded."""
+    now   = time.time()
+    cutoff = now - _RATE_WINDOW_SECONDS
+    bucket = _rate_buckets[ip]
+    # Prune expired entries
+    _rate_buckets[ip] = [t for t in bucket if t > cutoff]
+    if len(_rate_buckets[ip]) >= _RATE_MAX_POSTS:
+        return False
+    _rate_buckets[ip].append(now)
+    return True
 
 # ---------------------------------------------------------------------------
 # Tiny HTTP helpers
@@ -403,6 +460,130 @@ def _serve_static(path: str) -> tuple[int, bytes, str]:
     return 200, target.read_bytes(), "text/html"
 
 
+def _handle_vcloud_get() -> tuple[int, str]:
+    """Return a snapshot of all virtual compute resources."""
+    from aim.vcloud.manager import VCloudManager
+    mgr = VCloudManager.default()
+    return 200, json.dumps(mgr.snapshot())
+
+
+def _handle_vcloud_post(body: bytes) -> tuple[int, str]:
+    """Create a new virtual compute resource."""
+    from aim.vcloud.manager import VCloudManager, ResourceKind
+    try:
+        data: dict[str, Any] = json.loads(body.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return 400, json.dumps({"error": "Invalid JSON body"})
+
+    kind = str(data.get("kind", "")).strip().lower()
+    name = str(data.get("name", "")).strip()
+    mgr  = VCloudManager.default()
+
+    try:
+        if kind == "vcpu":
+            r = mgr.create_vcpu(
+                name=name,
+                cores=int(data.get("cores", 1)),
+                clock_mhz=int(data.get("clock_mhz", 1000)),
+            )
+        elif kind == "vserver":
+            r = mgr.create_vserver(
+                name=name,
+                vcpu_count=int(data.get("vcpu_count", 1)),
+                memory_mb=int(data.get("memory_mb", 512)),
+                host=str(data.get("host", "127.0.0.1")),
+                port=int(data.get("port", 0)),
+            )
+        elif kind == "vcloud":
+            r = mgr.create_vcloud(
+                name=name,
+                region=str(data.get("region", "local")),
+            )
+        else:
+            return 400, json.dumps({"error": "kind must be vcpu, vserver, or vcloud"})
+    except (ValueError, TypeError) as exc:
+        return 400, json.dumps({"error": str(exc)})
+
+    return 201, json.dumps({"status": "created", "resource": r.to_dict()})
+
+
+def _handle_vcloud_delete(qs: dict[str, str]) -> tuple[int, str]:
+    """Destroy a virtual resource by its ID."""
+    from aim.vcloud.manager import VCloudManager
+    resource_id = qs.get("id", "").strip()
+    if not resource_id:
+        return 400, json.dumps({"error": "id parameter is required"})
+    mgr = VCloudManager.default()
+    if mgr.get(resource_id) is None:
+        return 404, json.dumps({"error": f"Resource {resource_id!r} not found"})
+    mgr.destroy(resource_id)
+    return 200, json.dumps({"status": "destroyed", "resource_id": resource_id})
+
+
+def _handle_dns_resolve(qs: dict[str, str]) -> tuple[int, str]:
+    """Resolve a hostname or ANS name via the DNS bridge."""
+    from aim.dns.bridge import DNSBridge
+    name = qs.get("name", "").strip()
+    if not name:
+        return 400, json.dumps({"error": "name parameter is required"})
+    try:
+        default_port = int(qs.get("port", "7700"))
+    except ValueError:
+        default_port = 7700
+    bridge = DNSBridge()
+    result = bridge.resolve(name, default_port=default_port)
+    if result is None:
+        return 404, json.dumps({"error": f"Could not resolve {name!r}"})
+    return 200, json.dumps(result.to_dict())
+
+
+def _handle_dns_records() -> tuple[int, str]:
+    """Return all registered ANS records via the DNS bridge."""
+    from aim.dns.bridge import DNSBridge
+    bridge = DNSBridge()
+    records = bridge.list_ans_records()
+    return 200, json.dumps({"count": len(records), "records": records})
+
+
+def _handle_dns_register(body: bytes) -> tuple[int, str]:
+    """Register a DNS hostname as an ANS record."""
+    from aim.dns.bridge import DNSBridge
+    try:
+        data: dict[str, Any] = json.loads(body.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return 400, json.dumps({"error": "Invalid JSON body"})
+
+    hostname = str(data.get("hostname", "")).strip()
+    node_id  = str(data.get("node_id", str(uuid.uuid4()))).strip()
+    try:
+        port = int(data.get("port", 0))
+    except (ValueError, TypeError):
+        return 400, json.dumps({"error": "port must be an integer"})
+
+    if not hostname:
+        return 400, json.dumps({"error": "hostname is required"})
+    if not port:
+        return 400, json.dumps({"error": "port is required"})
+
+    caps_raw = data.get("capabilities", [])
+    caps = [str(c).strip() for c in caps_raw] if isinstance(caps_raw, list) else []
+
+    bridge = DNSBridge()
+    try:
+        record = bridge.register_from_dns(hostname, node_id, port, capabilities=caps)
+    except ValueError as exc:
+        return 400, json.dumps({"error": str(exc)})
+
+    return 201, json.dumps({
+        "status":   "registered",
+        "aim_uri":  record.aim_uri,
+        "name":     record.name,
+        "host":     record.host,
+        "port":     record.port,
+        "node_id":  record.node_id,
+    })
+
+
 # ---------------------------------------------------------------------------
 # Connection handler
 # ---------------------------------------------------------------------------
@@ -410,6 +591,8 @@ def _serve_static(path: str) -> tuple[int, bytes, str]:
 async def _handle_connection(
     reader: asyncio.StreamReader, writer: asyncio.StreamWriter
 ) -> None:
+    peer_addr = writer.get_extra_info("peername")
+    peer_ip   = peer_addr[0] if peer_addr else "unknown"
     try:
         method, path, qs, body = await _read_request(reader)
         if not method:
@@ -417,18 +600,29 @@ async def _handle_connection(
 
         logger.debug("HTTP %s %s %s", method, path, qs)
 
-        if path in ("/", "/index.html", "/about", "/about.html",
-                    "/aura", "/aura.html",
-                    "/city", "/city.html",
-                    "/ecosystem", "/ecosystem.html",
-                    "/project", "/project.html",
-                    "/resources", "/resources.html",
-                    "/apps", "/apps.html",
-                    "/feed", "/feed.html",
-                    "/directory", "/directory.html",
-                    "/legal", "/legal.html"):
+        # ── Health check ──────────────────────────────────────────────
+        if path == "/health":
+            _http_response(writer, 200, json.dumps({
+                "status":  "ok",
+                "version": __version__,
+                "origin":  __origin__,
+            }))
+
+        # ── Static pages ──────────────────────────────────────────────
+        elif path in ("/", "/index.html", "/about", "/about.html",
+                      "/aura", "/aura.html",
+                      "/city", "/city.html",
+                      "/ecosystem", "/ecosystem.html",
+                      "/project", "/project.html",
+                      "/resources", "/resources.html",
+                      "/apps", "/apps.html",
+                      "/feed", "/feed.html",
+                      "/directory", "/directory.html",
+                      "/legal", "/legal.html"):
             status, resp_body, ct = _serve_static(path)
             _http_response(writer, status, resp_body, ct)
+
+        # ── AIM node API ──────────────────────────────────────────────
         elif path == "/api/query":
             status, resp_body = await _handle_query(qs)
             _http_response(writer, status, resp_body)
@@ -441,22 +635,65 @@ async def _handle_connection(
         elif path == "/api/ans":
             status, resp_body = _handle_ans_get(qs)
             _http_response(writer, status, resp_body)
+
+        # ── Directory API ──────────────────────────────────────────────
         elif path == "/api/directory":
             if method == "GET":
                 status, resp_body = _handle_directory_get()
             elif method == "POST":
-                status, resp_body = _handle_directory_post(body)
+                if not _check_rate_limit(peer_ip):
+                    status, resp_body = 429, _RATE_LIMIT_EXCEEDED
+                else:
+                    status, resp_body = _handle_directory_post(body)
             else:
-                status, resp_body = 400, json.dumps({"error": "method not allowed"})
+                status, resp_body = 405, _METHOD_NOT_ALLOWED
             _http_response(writer, status, resp_body)
+
+        # ── Posts API ──────────────────────────────────────────────────
         elif path == "/api/posts":
             if method == "GET":
                 status, resp_body = _handle_posts_get(qs)
             elif method == "POST":
-                status, resp_body = _handle_posts_post(body)
+                if not _check_rate_limit(peer_ip):
+                    status, resp_body = 429, _RATE_LIMIT_EXCEEDED
+                else:
+                    status, resp_body = _handle_posts_post(body)
             else:
-                status, resp_body = 400, json.dumps({"error": "method not allowed"})
+                status, resp_body = 405, _METHOD_NOT_ALLOWED
             _http_response(writer, status, resp_body)
+
+        # ── Virtual cloud API ─────────────────────────────────────────
+        elif path == "/api/vcloud":
+            if method == "GET":
+                status, resp_body = _handle_vcloud_get()
+            elif method == "POST":
+                if not _check_rate_limit(peer_ip):
+                    status, resp_body = 429, _RATE_LIMIT_EXCEEDED
+                else:
+                    status, resp_body = _handle_vcloud_post(body)
+            elif method == "DELETE":
+                status, resp_body = _handle_vcloud_delete(qs)
+            else:
+                status, resp_body = 405, _METHOD_NOT_ALLOWED
+            _http_response(writer, status, resp_body)
+
+        # ── DNS bridge API ─────────────────────────────────────────────
+        elif path == "/api/dns/resolve":
+            status, resp_body = _handle_dns_resolve(qs)
+            _http_response(writer, status, resp_body)
+        elif path == "/api/dns/records":
+            status, resp_body = _handle_dns_records()
+            _http_response(writer, status, resp_body)
+        elif path == "/api/dns/register":
+            if method == "POST":
+                if not _check_rate_limit(peer_ip):
+                    status, resp_body = 429, _RATE_LIMIT_EXCEEDED
+                else:
+                    status, resp_body = _handle_dns_register(body)
+            else:
+                status, resp_body = 405, _METHOD_NOT_ALLOWED
+            _http_response(writer, status, resp_body)
+
         else:
             _http_response(writer, 404, json.dumps({"error": "not found"}))
 
@@ -482,5 +719,20 @@ async def start_web_server(host: str = "0.0.0.0", port: int = 8080) -> None:
     print(f"  Open in browser: http://{addr[0]}:{addr[1]}")
     print(f"  (Use http://localhost:{addr[1]} on this machine)")
     print(f"{'='*60}\n")
+
+    loop = asyncio.get_running_loop()
+
+    def _stop() -> None:
+        logger.info("AIM Web Bridge shutting down…")
+        server.close()
+
+    # Register graceful-shutdown handlers for SIGTERM and SIGINT
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        try:
+            loop.add_signal_handler(sig, _stop)
+        except (NotImplementedError, RuntimeError):
+            # Windows and some environments do not support add_signal_handler
+            pass
+
     async with server:
         await server.serve_forever()

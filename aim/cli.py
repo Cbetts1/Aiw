@@ -140,7 +140,7 @@ async def _cmd_city_status(args: argparse.Namespace) -> None:
         print("Governor did not respond.", file=sys.stderr)
 
 
-
+async def _cmd_status(args: argparse.Namespace) -> None:
     msg = AIMMessage.heartbeat(sender_id="cli")
     reader, writer = await asyncio.open_connection(args.host, args.port)
     from aim.node.base import _send_message, _recv_message
@@ -151,6 +151,78 @@ async def _cmd_city_status(args: argparse.Namespace) -> None:
         print(json.dumps(response.payload.get("result", {}), indent=2))
     else:
         print("Node did not respond.", file=sys.stderr)
+
+
+def _cmd_vcloud_list(args: argparse.Namespace) -> None:
+    from aim.vcloud.manager import VCloudManager
+    mgr = VCloudManager.default()
+    print(json.dumps(mgr.snapshot(), indent=2))
+
+
+def _cmd_vcloud_create(args: argparse.Namespace) -> None:
+    from aim.vcloud.manager import VCloudManager
+    mgr = VCloudManager.default()
+    if args.kind == "vcpu":
+        r = mgr.create_vcpu(
+            name=args.name,
+            cores=args.cores,
+            clock_mhz=args.clock_mhz,
+        )
+    elif args.kind == "vserver":
+        r = mgr.create_vserver(
+            name=args.name,
+            vcpu_count=args.vcpus,
+            memory_mb=args.memory,
+            host=args.host,
+            port=args.port,
+        )
+    elif args.kind == "vcloud":
+        r = mgr.create_vcloud(
+            name=args.name,
+            region=args.region,
+        )
+    else:
+        print(f"Unknown kind: {args.kind!r}", file=sys.stderr)
+        sys.exit(1)
+    print(json.dumps(r.to_dict(), indent=2))
+
+
+def _cmd_dns_resolve(args: argparse.Namespace) -> None:
+    from aim.dns.bridge import DNSBridge
+    bridge = DNSBridge()
+    result = bridge.resolve(args.name, default_port=args.port)
+    if result is None:
+        print(json.dumps({"error": f"Could not resolve {args.name!r}"}), file=sys.stderr)
+        sys.exit(1)
+    print(json.dumps(result.to_dict(), indent=2))
+
+
+def _cmd_dns_register(args: argparse.Namespace) -> None:
+    from aim.dns.bridge import DNSBridge
+    import uuid as _uuid
+    bridge = DNSBridge()
+    node_id = args.node_id or str(_uuid.uuid4())
+    record = bridge.register_from_dns(
+        hostname=args.hostname,
+        node_id=node_id,
+        port=args.port,
+        capabilities=args.capabilities.split(",") if args.capabilities else [],
+    )
+    print(json.dumps({
+        "registered": True,
+        "aim_uri":    record.aim_uri,
+        "name":       record.name,
+        "host":       record.host,
+        "port":       record.port,
+        "node_id":    record.node_id,
+    }, indent=2))
+
+
+def _cmd_dns_records(args: argparse.Namespace) -> None:
+    from aim.dns.bridge import DNSBridge
+    bridge = DNSBridge()
+    records = bridge.list_ans_records()
+    print(json.dumps({"count": len(records), "records": records}, indent=2))
 
 
 # ---------------------------------------------------------------------------
@@ -219,12 +291,63 @@ def _build_parser() -> argparse.ArgumentParser:
         help="HTTP port to serve the UI on (default: 8080)",
     )
 
+    # --- vcloud subcommand ---
+    vcloud_p = sub.add_parser("vcloud", help="Virtual cloud compute resource management")
+    vcloud_sub = vcloud_p.add_subparsers(dest="vcloud_command")
+
+    vcloud_sub.add_parser("list", help="List all virtual compute resources")
+
+    vcloud_create_p = vcloud_sub.add_parser("create", help="Create a virtual resource")
+    vcloud_create_p.add_argument(
+        "kind", choices=["vcpu", "vserver", "vcloud"],
+        help="Type of resource to create",
+    )
+    vcloud_create_p.add_argument("--name",      default="",     help="Resource name")
+    vcloud_create_p.add_argument("--cores",     type=int, default=1,    help="vCPU cores (vcpu only)")
+    vcloud_create_p.add_argument("--clock-mhz", type=int, default=1000, dest="clock_mhz",
+                                 help="Clock speed in MHz (vcpu only)")
+    vcloud_create_p.add_argument("--vcpus",     type=int, default=1,    help="vCPU count (vserver only)")
+    vcloud_create_p.add_argument("--memory",    type=int, default=512,  help="Memory MB (vserver only)")
+    vcloud_create_p.add_argument("--host",      default="127.0.0.1",   help="Bind host (vserver only)")
+    vcloud_create_p.add_argument("--port",      type=int, default=0,    help="Bind port (vserver only)")
+    vcloud_create_p.add_argument("--region",    default="local",        help="Region (vcloud only)")
+
+    # --- dns subcommand ---
+    dns_p = sub.add_parser("dns", help="DNS ↔ ANS bridge operations")
+    dns_sub = dns_p.add_subparsers(dest="dns_command")
+
+    dns_resolve_p = dns_sub.add_parser("resolve", help="Resolve a hostname or ANS name")
+    dns_resolve_p.add_argument("name", help="Hostname or aim:// URI to resolve")
+    dns_resolve_p.add_argument("--port", type=int, default=7700,
+                               help="Default port when resolving via DNS (default: 7700)")
+
+    dns_register_p = dns_sub.add_parser("register", help="Register a DNS hostname as an ANS record")
+    dns_register_p.add_argument("hostname", help="Classical DNS hostname to anchor")
+    dns_register_p.add_argument("--node-id", default="", dest="node_id",
+                                help="AIM node UUID (auto-generated if omitted)")
+    dns_register_p.add_argument("--port", type=int, required=True,
+                                help="TCP port the AIM node listens on")
+    dns_register_p.add_argument("--capabilities", default="",
+                                help="Comma-separated capability tags")
+
+    dns_sub.add_parser("records", help="List all registered ANS records")
+
     return parser
 
 
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+
+def _get_subparser(
+    parser: argparse.ArgumentParser, name: str
+) -> argparse.ArgumentParser | None:
+    """Return the sub-parser registered under *name*, or None."""
+    for action in parser._subparsers._actions:  # type: ignore[attr-defined]
+        if hasattr(action, "_name_parser_map"):
+            return action._name_parser_map.get(name)
+    return None
+
 
 def main(argv: list[str] | None = None) -> None:
     parser = _build_parser()
@@ -244,6 +367,28 @@ def main(argv: list[str] | None = None) -> None:
     elif args.command == "web" and getattr(args, "web_command", None) == "start":
         from aim.web.server import start_web_server
         asyncio.run(start_web_server(host=args.host, port=args.port))
+    elif args.command == "vcloud":
+        vcloud_cmd = getattr(args, "vcloud_command", None)
+        if vcloud_cmd == "list":
+            _cmd_vcloud_list(args)
+        elif vcloud_cmd == "create":
+            _cmd_vcloud_create(args)
+        else:
+            sub = _get_subparser(parser, "vcloud")
+            if sub:
+                sub.print_help()
+    elif args.command == "dns":
+        dns_cmd = getattr(args, "dns_command", None)
+        if dns_cmd == "resolve":
+            _cmd_dns_resolve(args)
+        elif dns_cmd == "register":
+            _cmd_dns_register(args)
+        elif dns_cmd == "records":
+            _cmd_dns_records(args)
+        else:
+            sub = _get_subparser(parser, "dns")
+            if sub:
+                sub.print_help()
     else:
         parser.print_help()
 
