@@ -1,11 +1,5 @@
-"""
-AIM Content Layer — signed, ledger-backed content store.
+"""AIM Content Layer — publish, read, and list content via AIM intents."""
 
-Content items are immutable once posted (origin signature is embedded).
-Deletion is a soft-delete: the item is marked removed but the ledger entry
-is permanent.
-"""
+from aim.content.node import ContentNode
 
-from aim.content.layer import ContentLayer, ContentItem
-
-__all__ = ["ContentLayer", "ContentItem"]
+__all__ = ["ContentNode"]
