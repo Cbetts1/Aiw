@@ -49,6 +49,16 @@ class RelayNode(BaseNode):
                       (target_host, target_port, inner message digest).
     heartbeat_interval : seconds between peer heartbeat sweeps.
     All remaining kwargs are forwarded to BaseNode.
+    AIM Relay Node — backbone router.
+
+    Parameters
+    ----------
+    relay_peers           : list of ``(host, port)`` tuples for peer relays
+    health_check_interval : seconds between relay-peer heartbeats (default 60)
+    content_cache_size    : max items in the relay content cache (default 256)
+    content_cache_ttl     : seconds before a cached item expires (default 300)
+    ledger                : LegacyLedger instance (default: global)
+    All other parameters are forwarded to :class:`~aim.node.base.BaseNode`.
     """
 
     def __init__(
@@ -175,17 +185,154 @@ class RelayNode(BaseNode):
                 correlation_id=msg.message_id,
                 result={"error": f"no response from {target_host}:{target_port}"},
                 status=Status.ERROR,
+        relay_peers: list[tuple[str, int]] | None = None,
+        health_check_interval: float = 60.0,
+        content_cache_size: int = 256,
+        content_cache_ttl: float = 300.0,
+        ledger: LegacyLedger | None = None,
+        **kwargs: Any,
+    ) -> None:
+        caps = list(kwargs.pop("capabilities", None) or [])
+        if "relay" not in caps:
+            caps = ["relay"] + caps
+        kwargs["capabilities"] = caps
+        super().__init__(*args, **kwargs)
+
+        self._relay_peers: list[tuple[str, int]] = list(relay_peers or [])
+        self._relay_health: dict[tuple[str, int], float | None] = {
+            addr: None for addr in self._relay_peers
+        }
+        self._health_check_interval = health_check_interval
+        self._content_cache = _LRUCache(
+            maxsize=content_cache_size, ttl=content_cache_ttl
+        )
+        self._ledger = ledger or default_ledger()
+        self._sig = CreatorSignature(node_id=self.node_id)
+        self._health_task: asyncio.Task[None] | None = None
+
+        # Routing table: receiver_id → (host, port)
+        self._route_table: dict[str, tuple[str, int]] = {}
+
+        self._register_relay_handlers()
+
+    # ------------------------------------------------------------------
+    # Relay peer management
+    # ------------------------------------------------------------------
+
+    def add_relay_peer(self, host: str, port: int) -> None:
+        """Register a new relay peer at runtime."""
+        addr = (host, port)
+        if addr not in self._relay_peers:
+            self._relay_peers.append(addr)
+            self._relay_health[addr] = None
+            self._ledger.record(
+                _EK_RELAY_PEER_CONNECTED, self.node_id,
+                payload={"peer_host": host, "peer_port": port},
+                signature=self._sig,
+            )
+
+    def healthy_relay_peers(self) -> list[tuple[str, int]]:
+        """Return peer relays with a recent heartbeat."""
+        now = time.time()
+        return [
+            addr for addr, last_ok in self._relay_health.items()
+            if last_ok is not None and now - last_ok < self._health_check_interval * 3
+        ]
+
+    # ------------------------------------------------------------------
+    # Content cache helpers (used by ContentLayer integration)
+    # ------------------------------------------------------------------
+
+    def cache_put(self, content_id: str, item: Any) -> None:
+        """Store a content item in the relay's LRU cache."""
+        self._content_cache.set(content_id, item)
+        self._ledger.record(
+            _EK_RELAY_CONTENT_CACHED, self.node_id,
+            payload={"content_id": content_id},
+            signature=self._sig,
+        )
+
+    def cache_get(self, content_id: str) -> Any | None:
+        """Retrieve a cached content item, or None on miss / expiry."""
+        return self._content_cache.get(content_id)
+
+    # ------------------------------------------------------------------
+    # Relay-specific protocol handlers
+    # ------------------------------------------------------------------
+
+    def _register_relay_handlers(self) -> None:
+        """Register forwarding handlers for routable intents."""
+        for intent in (Intent.QUERY, Intent.TASK, Intent.DELEGATE):
+            # Capture intent in closure
+            def _make_handler(i: Intent):  # noqa: ANN001
+                async def _handler(msg: AIMMessage) -> AIMMessage:
+                    return await self._route_message(msg)
+                return _handler
+            self._handler.register(intent, _make_handler(intent))
+
+        @self._handler.on(Intent.ANNOUNCE)
+        async def _on_announce(msg: AIMMessage) -> None:
+            # Learn the sender's address for future routing
+            addr = msg.payload.get("addr")
+            if isinstance(addr, list) and len(addr) == 2 and msg.sender_id:
+                self._route_table[msg.sender_id] = (addr[0], addr[1])
+                logger.debug(
+                    "Relay %s learned route: %s → %s:%s",
+                    self.node_id[:8], msg.sender_id[:8], addr[0], addr[1],
+                )
+            return None
+
+    async def _route_message(self, msg: AIMMessage) -> AIMMessage:
+        """Route *msg* to its intended receiver or broadcast to peers."""
+        if msg.ttl <= 0:
+            self._ledger.record(
+                _EK_RELAY_MSG_DROPPED, self.node_id,
+                payload={"reason": "ttl_expired", "message_id": msg.message_id},
+                signature=self._sig,
+            )
+            return AIMMessage.respond(
+                correlation_id=msg.message_id,
+                result={"error": "ttl_expired"},
                 sender_id=self.node_id,
                 receiver_id=msg.sender_id,
             )
 
-        # Store in cache
+       # Store in cache
         if self._enable_cache:
             self._cache_put(cache_key, response)
 
         return AIMMessage.respond(
             correlation_id=msg.message_id,
             result={"relayed": True, "cached": False, "response": json.loads(response.to_json())},
+        msg.ttl -= 1
+
+        # Try the route table first
+        receiver_id = msg.receiver_id
+        if receiver_id and receiver_id in self._route_table:
+            host, port = self._route_table[receiver_id]
+            response = await self.send(msg, host, port)
+            if response is not None:
+                self._ledger.record(
+                    _EK_RELAY_MSG_FORWARDED, self.node_id,
+                    payload={
+                        "to_host": host, "to_port": port,
+                        "intent": msg.intent.value,
+                        "message_id": msg.message_id,
+                    },
+                    signature=self._sig,
+                )
+                return response
+
+        # Fan out to healthy peer relays
+        for addr in self.healthy_relay_peers():
+            response = await self.send(msg, addr[0], addr[1])
+            if response is not None:
+                return response
+
+        # No route found
+        return AIMMessage.respond(
+            correlation_id=msg.message_id,
+            result={"error": "no_route_to_receiver"},
             sender_id=self.node_id,
             receiver_id=msg.sender_id,
         )
@@ -291,6 +438,31 @@ class RelayNode(BaseNode):
                 "Relay %s heartbeat FAILED → %s (%s:%s)",
                 self.node_id[:8], record.relay_id[:8], record.host, record.port,
             )
+    # Health-check loop
+    # ------------------------------------------------------------------
+
+    async def _health_check_loop(self) -> None:
+        """Periodically heartbeat all configured relay peers."""
+        while self._running:
+            for addr in list(self._relay_peers):
+                try:
+                    hb = AIMMessage.heartbeat(sender_id=self.node_id)
+                    response = await self.send(hb, addr[0], addr[1], timeout=5.0)
+                    if response is not None:
+                        self._relay_health[addr] = time.time()
+                    else:
+                        self._relay_health[addr] = None
+                        logger.warning(
+                            "Relay %s: peer %s:%s unresponsive",
+                            self.node_id[:8], addr[0], addr[1],
+                        )
+                except Exception as exc:
+                    self._relay_health[addr] = None
+                    logger.warning(
+                        "Relay %s: heartbeat to %s:%s failed — %s",
+                        self.node_id[:8], addr[0], addr[1], exc,
+                    )
+            await asyncio.sleep(self._health_check_interval)
 
     # ------------------------------------------------------------------
     # Lifecycle overrides

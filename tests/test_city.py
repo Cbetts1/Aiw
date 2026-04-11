@@ -128,7 +128,7 @@ class TestCityGovernorBot:
         await gov._task_citizen_join({"citizen_id": "c-002", "name": "Bob"})
         result = await gov._task_citizen_leave({"citizen_id": "c-002"})
         assert result["status"] == "ok"
-        assert "c-002" not in gov._citizens
+        assert "c-002" not in gov._entities
 
     @pytest.mark.asyncio
     async def test_task_list_bots(self):

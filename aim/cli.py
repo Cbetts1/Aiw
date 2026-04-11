@@ -285,6 +285,159 @@ def _cmd_dns_records(args: argparse.Namespace) -> None:
     print(json.dumps({"count": len(records), "records": records}, indent=2))
 
 
+async def _cmd_mesh_up(args: argparse.Namespace) -> None:
+    from aim.node.agent import AgentNode
+    from aim.identity.ledger import EventKind
+
+    sig = CreatorSignature()
+    ledger = default_ledger()
+
+    tasks: list[asyncio.Task] = []  # type: ignore[type-arg]
+    node = AgentNode(
+        host=args.host,
+        port=args.node_port,
+        capabilities=["query", "task"],
+    )
+    node_record = {
+        "node_id": node.node_id,
+        "host": args.host,
+        "port": args.node_port,
+    }
+    payload: dict[str, object] = {"node": node_record}
+
+    gateway = None
+    relay = None
+
+    if args.with_gateway:
+        from aim.gateway.node import GatewayNode
+        relay_peers: list[tuple[str, int]] = []
+        if args.with_relay:
+            relay_peers = [(args.host, args.relay_port)]
+        gateway = GatewayNode(
+            host=args.host,
+            port=args.gateway_port,
+            relay_peers=relay_peers,
+            ledger=ledger,
+        )
+        payload["gateway"] = {"host": args.host, "port": args.gateway_port}
+
+    if args.with_relay:
+        from aim.relay.node import RelayNode
+        relay = RelayNode(
+            host=args.host,
+            port=args.relay_port,
+            ledger=ledger,
+        )
+        # Teach the relay about the local compute node
+        relay._route_table[node.node_id] = (args.host, args.node_port)
+        payload["relay"] = {"host": args.host, "port": args.relay_port}
+
+    ledger.record(
+        EventKind.MESH_NODE_JOINED, node.node_id,
+        payload=payload,  # type: ignore[arg-type]
+        signature=sig,
+    )
+
+    print(f"\n{'='*62}")
+    print(f"  AIM MESH UP  v{__version__}  (creator: {__origin__})")
+    print(f"{'='*62}")
+    print(f"  Node      : {args.host}:{args.node_port}  [{node.node_id[:8]}]")
+    if gateway:
+        print(f"  Gateway   : {args.host}:{args.gateway_port}")
+    if relay:
+        print(f"  Relay     : {args.host}:{args.relay_port}")
+    print(f"{'='*62}\n")
+
+    coros = [node.start()]
+    if gateway:
+        coros.append(gateway.start())
+    if relay:
+        coros.append(relay.start())
+
+    try:
+        await asyncio.gather(*[asyncio.create_task(c) for c in coros])
+    except KeyboardInterrupt:
+        await node.stop()
+        if gateway:
+            await gateway.stop()
+        if relay:
+            await relay.stop()
+        ledger.record(EventKind.NODE_STOPPED, node.node_id)
+
+
+async def _cmd_mesh_join(args: argparse.Namespace) -> None:
+    from aim.node.agent import AgentNode
+    from aim.identity.ledger import EventKind
+    from aim.gateway.node import GatewayNode
+
+    sig = CreatorSignature()
+    ledger = default_ledger()
+
+    # Parse gateway address
+    gw_host, gw_port = args.gateway, 7600
+    if ":" in args.gateway:
+        parts = args.gateway.rsplit(":", 1)
+        try:
+            gw_host, gw_port = parts[0], int(parts[1])
+        except ValueError:
+            pass
+
+    node = AgentNode(
+        host=args.host,
+        port=args.node_port,
+        capabilities=["query", "task"],
+    )
+
+    ledger.record(
+        EventKind.MESH_NODE_JOINED, node.node_id,
+        payload={"gateway": f"{gw_host}:{gw_port}", "host": args.host, "port": args.node_port},
+        signature=sig,
+    )
+
+    print(f"\n{'='*62}")
+    print(f"  AIM MESH JOIN  v{__version__}  (creator: {__origin__})")
+    print(f"{'='*62}")
+    print(f"  Node      : {args.host}:{args.node_port}  [{node.node_id[:8]}]")
+    print(f"  Gateway   : {gw_host}:{gw_port}")
+    print(f"{'='*62}\n")
+
+    await node.announce_to(gw_host, gw_port)
+
+    try:
+        await node.start()
+    except KeyboardInterrupt:
+        await node.stop()
+        ledger.record(EventKind.NODE_STOPPED, node.node_id)
+
+
+async def _cmd_mesh_status(args: argparse.Namespace) -> None:
+    msg = AIMMessage.heartbeat(sender_id="cli")
+    reader, writer = await asyncio.open_connection(args.host, args.port)
+    from aim.node.base import _send_message, _recv_message
+    await _send_message(writer, msg)
+    response = await _recv_message(reader)
+    writer.close()
+    if response:
+        result = response.payload.get("result", response.payload)
+        print(json.dumps(result, indent=2))
+    else:
+        print("No response from mesh node.", file=sys.stderr)
+
+
+async def _cmd_mesh_peers(args: argparse.Namespace) -> None:
+    msg = AIMMessage.task("relay_status", {}, sender_id="cli")
+    reader, writer = await asyncio.open_connection(args.host, args.port)
+    from aim.node.base import _send_message, _recv_message
+    await _send_message(writer, msg)
+    response = await _recv_message(reader)
+    writer.close()
+    if response:
+        result = response.payload.get("result", response.payload)
+        print(json.dumps(result, indent=2))
+    else:
+        print("No response from relay node.", file=sys.stderr)
+
+
 # ---------------------------------------------------------------------------
 # Argument parser
 # ---------------------------------------------------------------------------
@@ -411,6 +564,40 @@ def _build_parser() -> argparse.ArgumentParser:
 
     dns_sub.add_parser("records", help="List all registered ANS records")
 
+    # --- mesh subcommand ---
+    mesh_p = sub.add_parser("mesh", help="AIM mesh operations (start stack, join network)")
+    mesh_sub = mesh_p.add_subparsers(dest="mesh_command")
+
+    mesh_up_p = mesh_sub.add_parser("up", help="Start a full local AIM mesh stack")
+    mesh_up_p.add_argument("--host",         default="127.0.0.1",
+                           help="Bind address (default: 127.0.0.1)")
+    mesh_up_p.add_argument("--node-port",    type=int, default=7700, dest="node_port",
+                           help="Compute node port (default: 7700)")
+    mesh_up_p.add_argument("--with-gateway", action="store_true", dest="with_gateway",
+                           help="Also start a Gateway Node")
+    mesh_up_p.add_argument("--gateway-port", type=int, default=7600, dest="gateway_port",
+                           help="Gateway port (default: 7600)")
+    mesh_up_p.add_argument("--with-relay",   action="store_true", dest="with_relay",
+                           help="Also start a Relay Node")
+    mesh_up_p.add_argument("--relay-port",   type=int, default=7500, dest="relay_port",
+                           help="Relay port (default: 7500)")
+
+    mesh_join_p = mesh_sub.add_parser("join", help="Join an existing public AIM mesh")
+    mesh_join_p.add_argument("--gateway", required=True,
+                             help="Public gateway address, e.g. mesh.aim.example.org or host:port")
+    mesh_join_p.add_argument("--host",      default="127.0.0.1",
+                             help="Local bind address (default: 127.0.0.1)")
+    mesh_join_p.add_argument("--node-port", type=int, default=7700, dest="node_port",
+                             help="Local compute node port (default: 7700)")
+
+    mesh_status_p = mesh_sub.add_parser("status", help="Check health of a gateway or relay")
+    mesh_status_p.add_argument("--host", default="127.0.0.1")
+    mesh_status_p.add_argument("--port", type=int, default=7600)
+
+    mesh_peers_p = mesh_sub.add_parser("peers", help="List relay peers known to a relay node")
+    mesh_peers_p.add_argument("--host", default="127.0.0.1")
+    mesh_peers_p.add_argument("--port", type=int, default=7500)
+
     return parser
 
 
@@ -468,6 +655,20 @@ def main(argv: list[str] | None = None) -> None:
             _cmd_dns_records(args)
         else:
             sub = _get_subparser(parser, "dns")
+            if sub:
+                sub.print_help()
+    elif args.command == "mesh":
+        mesh_cmd = getattr(args, "mesh_command", None)
+        if mesh_cmd == "up":
+            asyncio.run(_cmd_mesh_up(args))
+        elif mesh_cmd == "join":
+            asyncio.run(_cmd_mesh_join(args))
+        elif mesh_cmd == "status":
+            asyncio.run(_cmd_mesh_status(args))
+        elif mesh_cmd == "peers":
+            asyncio.run(_cmd_mesh_peers(args))
+        else:
+            sub = _get_subparser(parser, "mesh")
             if sub:
                 sub.print_help()
     else:
