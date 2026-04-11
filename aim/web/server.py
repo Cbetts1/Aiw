@@ -21,6 +21,9 @@ DELETE /api/vcloud?id=…           Destroy a virtual resource → JSON
 GET  /api/dns/resolve?name=…      Resolve a name via DNS bridge → JSON
 GET  /api/dns/records             List all ANS records → JSON
 POST /api/dns/register            Register a DNS hostname as ANS record → JSON
+POST /api/content                 Publish a new content item (PUBLISH intent) → JSON
+GET  /api/content                 List content items with optional filters (LIST intent) → JSON
+GET  /api/content/<id>            Read a single content item by ID (READ intent) → JSON
 
 All responses include CORS and security headers.
 """
@@ -63,6 +66,7 @@ def _resolve_data_dir() -> Path:
 _DATA_DIR   = _resolve_data_dir()
 _DIR_FILE   = _DATA_DIR / "directory.json"
 _POSTS_FILE = _DATA_DIR / "posts.json"
+_CONTENT_FILE = _DATA_DIR / "content.jsonl"
 
 # Ensure data directory and files exist at import time
 _DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -110,6 +114,8 @@ _STATUS_PHRASES = {
     201: "Created",
     400: "Bad Request",
     404: "Not Found",
+    405: "Method Not Allowed",
+    429: "Too Many Requests",
     500: "Internal Server Error",
     502: "Bad Gateway",
 }
@@ -545,8 +551,7 @@ def _handle_dns_records() -> tuple[int, str]:
     return 200, json.dumps({"count": len(records), "records": records})
 
 
-def _handle_dns_register(body: bytes) -> tuple[int, str]:
-    """Register a DNS hostname as an ANS record."""
+def _handle_dns_register(body: bytes) -> tuple[int, str]:    """Register a DNS hostname as an ANS record."""
     from aim.dns.bridge import DNSBridge
     try:
         data: dict[str, Any] = json.loads(body.decode("utf-8"))
@@ -582,6 +587,69 @@ def _handle_dns_register(body: bytes) -> tuple[int, str]:
         "port":     record.port,
         "node_id":  record.node_id,
     })
+
+
+# ---------------------------------------------------------------------------
+# Content API handlers
+# ---------------------------------------------------------------------------
+
+def _get_content_store():
+    """Return the shared ContentStore backed by the data-dir JSONL file."""
+    from aim.content.store import default_store
+    return default_store(persist_path=str(_CONTENT_FILE))
+
+
+def _handle_content_post(body: bytes) -> tuple[int, str]:
+    """Publish a new content item (maps to PUBLISH intent)."""
+    try:
+        data: dict[str, Any] = json.loads(body.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return 400, json.dumps({"error": "Invalid JSON body"})
+
+    store = _get_content_store()
+    try:
+        item = store.publish(
+            body=str(data.get("body", "")),
+            author=str(data.get("author", "anonymous")).strip()[:120] or "anonymous",
+            title=str(data.get("title", "")),
+            tags=data.get("tags", []) if isinstance(data.get("tags"), list) else [],
+            visibility=str(data.get("visibility", "public")),
+            content_type=str(data.get("content_type", "post")),
+            author_sig=str(data.get("signature", "anonymous")),
+        )
+    except ValueError as exc:
+        return 400, json.dumps({"error": str(exc)})
+
+    return 201, json.dumps({"status": "published", "item": item.to_dict()})
+
+
+def _handle_content_get_by_id(content_id: str) -> tuple[int, str]:
+    """Return a single content item by ID (maps to READ intent)."""
+    store = _get_content_store()
+    item = store.read(content_id)
+    if item is None:
+        return 404, json.dumps({"error": f"Content item {content_id!r} not found"})
+    return 200, json.dumps({"item": item.to_dict()})
+
+
+def _handle_content_list(qs: dict[str, str]) -> tuple[int, str]:
+    """List content items with optional filters (maps to LIST intent)."""
+    store = _get_content_store()
+    try:
+        limit  = max(1, min(int(qs.get("limit", "50")), 200))
+        offset = max(0, int(qs.get("offset", "0")))
+    except ValueError:
+        limit, offset = 50, 0
+
+    items = store.list(
+        author=qs.get("author") or None,
+        tag=qs.get("tag") or None,
+        visibility=qs.get("visibility") or None,
+        content_type=qs.get("content_type") or None,
+        limit=limit,
+        offset=offset,
+    )
+    return 200, json.dumps({"count": len(items), "items": [i.to_dict() for i in items]})
 
 
 # ---------------------------------------------------------------------------
@@ -690,6 +758,26 @@ async def _handle_connection(
                     status, resp_body = 429, _RATE_LIMIT_EXCEEDED
                 else:
                     status, resp_body = _handle_dns_register(body)
+            else:
+                status, resp_body = 405, _METHOD_NOT_ALLOWED
+            _http_response(writer, status, resp_body)
+
+        # ── Content API ────────────────────────────────────────────────
+        elif path == "/api/content":
+            if method == "GET":
+                status, resp_body = _handle_content_list(qs)
+            elif method == "POST":
+                if not _check_rate_limit(peer_ip):
+                    status, resp_body = 429, _RATE_LIMIT_EXCEEDED
+                else:
+                    status, resp_body = _handle_content_post(body)
+            else:
+                status, resp_body = 405, _METHOD_NOT_ALLOWED
+            _http_response(writer, status, resp_body)
+        elif path.startswith("/api/content/"):
+            content_id = path[len("/api/content/"):]
+            if method == "GET":
+                status, resp_body = _handle_content_get_by_id(content_id)
             else:
                 status, resp_body = 405, _METHOD_NOT_ALLOWED
             _http_response(writer, status, resp_body)
