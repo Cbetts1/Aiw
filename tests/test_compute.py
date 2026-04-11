@@ -1,9 +1,9 @@
-"""Tests for the Meshara Compute Layer."""
+"""Tests for the AIM Compute Layer."""
 
 import asyncio
 import pytest
 
-from meshara.compute.executor import Executor, TaskState
+from aim.compute.executor import Executor, TaskState
 
 
 # ---------------------------------------------------------------------------

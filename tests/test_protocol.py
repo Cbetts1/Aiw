@@ -1,60 +1,60 @@
-"""Tests for the Meshara Protocol Layer."""
+"""Tests for the AIM Protocol Layer."""
 
 import json
 import pytest
 
-from meshara.protocol.message import MesharaMessage, Intent, Status
-from meshara.protocol.handler import ProtocolHandler
+from aim.protocol.message import AIMMessage, Intent, Status
+from aim.protocol.handler import ProtocolHandler
 
 
 # ---------------------------------------------------------------------------
-# MesharaMessage serialisation
+# AIMMessage serialisation
 # ---------------------------------------------------------------------------
 
 class TestAIMMessageSerialisation:
     def test_to_json_roundtrip(self):
-        msg = MesharaMessage.query("hello", sender_id="node-a")
+        msg = AIMMessage.query("hello", sender_id="node-a")
         raw = msg.to_json()
-        restored = MesharaMessage.from_json(raw)
+        restored = AIMMessage.from_json(raw)
         assert restored.intent == Intent.QUERY
         assert restored.payload["text"] == "hello"
         assert restored.sender_id == "node-a"
         assert restored.signature == "Cbetts1"
 
     def test_to_bytes_roundtrip(self):
-        msg = MesharaMessage.task("summarise", {"doc": "test"}, sender_id="node-b")
-        restored = MesharaMessage.from_bytes(msg.to_bytes())
+        msg = AIMMessage.task("summarise", {"doc": "test"}, sender_id="node-b")
+        restored = AIMMessage.from_bytes(msg.to_bytes())
         assert restored.intent == Intent.TASK
         assert restored.payload["name"] == "summarise"
 
     def test_respond_factory(self):
-        msg = MesharaMessage.query("ping")
-        resp = MesharaMessage.respond(msg.message_id, result="pong", status=Status.OK)
+        msg = AIMMessage.query("ping")
+        resp = AIMMessage.respond(msg.message_id, result="pong", status=Status.OK)
         assert resp.intent == Intent.RESPOND
         assert resp.correlation_id == msg.message_id
         assert resp.payload["result"] == "pong"
         assert resp.payload["status"] == "ok"
 
     def test_heartbeat_factory(self):
-        hb = MesharaMessage.heartbeat(sender_id="x")
+        hb = AIMMessage.heartbeat(sender_id="x")
         assert hb.intent == Intent.HEARTBEAT
         assert hb.sender_id == "x"
 
     def test_announce_factory(self):
-        ann = MesharaMessage.announce(["query", "task"], sender_id="n1")
+        ann = AIMMessage.announce(["query", "task"], sender_id="n1")
         assert ann.intent == Intent.ANNOUNCE
         assert "query" in ann.payload["capabilities"]
 
     def test_default_signature(self):
-        msg = MesharaMessage(intent=Intent.QUERY, payload={})
+        msg = AIMMessage(intent=Intent.QUERY, payload={})
         assert msg.signature == "Cbetts1"
 
     def test_unique_message_ids(self):
-        ids = {MesharaMessage(intent=Intent.HEARTBEAT).message_id for _ in range(100)}
+        ids = {AIMMessage(intent=Intent.HEARTBEAT).message_id for _ in range(100)}
         assert len(ids) == 100
 
     def test_ttl_default(self):
-        msg = MesharaMessage(intent=Intent.QUERY)
+        msg = AIMMessage(intent=Intent.QUERY)
         assert msg.ttl == 16
 
 
@@ -66,14 +66,14 @@ class TestProtocolHandler:
     @pytest.mark.asyncio
     async def test_dispatch_to_registered_handler(self):
         handler = ProtocolHandler()
-        received: list[MesharaMessage] = []
+        received: list[AIMMessage] = []
 
         @handler.on(Intent.QUERY)
-        async def handle_query(msg: MesharaMessage):
+        async def handle_query(msg: AIMMessage):
             received.append(msg)
-            return MesharaMessage.respond(msg.message_id, result="answer")
+            return AIMMessage.respond(msg.message_id, result="answer")
 
-        msg = MesharaMessage.query("test question")
+        msg = AIMMessage.query("test question")
         response = await handler.dispatch(msg)
         assert len(received) == 1
         assert response is not None
@@ -82,7 +82,7 @@ class TestProtocolHandler:
     @pytest.mark.asyncio
     async def test_no_handler_returns_none(self):
         handler = ProtocolHandler()
-        msg = MesharaMessage.heartbeat()
+        msg = AIMMessage.heartbeat()
         result = await handler.dispatch(msg)
         assert result is None
 
@@ -96,9 +96,9 @@ class TestProtocolHandler:
 
         @handler.on(Intent.TASK)
         async def second(msg):
-            return MesharaMessage.respond(msg.message_id, result="second wins")
+            return AIMMessage.respond(msg.message_id, result="second wins")
 
-        msg = MesharaMessage.task("compute")
+        msg = AIMMessage.task("compute")
         response = await handler.dispatch(msg)
         assert response.payload["result"] == "second wins"
 
@@ -110,7 +110,7 @@ class TestProtocolHandler:
         async def bad_handler(msg):
             raise RuntimeError("oops")
 
-        msg = MesharaMessage.query("trigger error")
+        msg = AIMMessage.query("trigger error")
         result = await handler.dispatch(msg)
         assert result is None
 
@@ -119,9 +119,9 @@ class TestProtocolHandler:
         handler = ProtocolHandler()
 
         async def fn(msg):
-            return MesharaMessage.respond(msg.message_id, result="ok")
+            return AIMMessage.respond(msg.message_id, result="ok")
 
         handler.register(Intent.HEARTBEAT, fn)
-        msg = MesharaMessage.heartbeat()
+        msg = AIMMessage.heartbeat()
         response = await handler.dispatch(msg)
         assert response.payload["result"] == "ok"

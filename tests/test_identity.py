@@ -1,9 +1,9 @@
-"""Tests for the Meshara Identity and Legacy Layer."""
+"""Tests for the AIM Identity and Legacy Layer."""
 
 import pytest
 
-from meshara.identity.signature import CreatorSignature, ORIGIN_CREATOR, MESHARA_MESH_NAME
-from meshara.identity.ledger import LegacyLedger, LedgerEntry, EventKind
+from aim.identity.signature import CreatorSignature, ORIGIN_CREATOR, AIM_MESH_NAME
+from aim.identity.ledger import LegacyLedger, LedgerEntry, EventKind
 
 
 # ---------------------------------------------------------------------------
@@ -14,7 +14,7 @@ class TestCreatorSignature:
     def test_default_fields(self):
         sig = CreatorSignature()
         assert sig.creator == ORIGIN_CREATOR
-        assert sig.mesh == MESHARA_MESH_NAME
+        assert sig.mesh == AIM_MESH_NAME
         assert sig.epoch == "1991"
         assert len(sig.digest) == 64  # SHA-256 hex digest
 
@@ -35,7 +35,7 @@ class TestCreatorSignature:
         sig = CreatorSignature()
         s = str(sig)
         assert ORIGIN_CREATOR in s
-        assert MESHARA_MESH_NAME in s
+        assert AIM_MESH_NAME in s
 
     def test_to_dict_round_trip(self):
         sig = CreatorSignature()

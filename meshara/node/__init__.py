@@ -1,1 +1,0 @@
-"""Meshara Virtual Node Layer."""

@@ -1,1 +1,1 @@
-"""Test package for Meshara."""
+"""Test package for AIM."""

@@ -1,22 +1,22 @@
-"""Tests for the Meshara City governance module."""
+"""Tests for the AIM City governance module."""
 
 from __future__ import annotations
 
 import pytest
 
-from meshara.node.registry import NodeRegistry, NodeRecord
-from meshara.identity.ledger import LegacyLedger
-from meshara.identity.signature import CreatorSignature, ORIGIN_CREATOR
-from meshara.protocol.message import MesharaMessage, Intent
-from meshara.city.roles import CityRole, CityEventKind
-from meshara.city.governor import CityGovernorBot
-from meshara.city.citizen import CitizenNode
-from meshara.city.protector import ProtectionAgent
-from meshara.city.builder import BuilderBot
-from meshara.city.educator import EducationBot
-from meshara.city.architect import ArchitectBot
-from meshara.city.integrity import IntegrityGuard
-from meshara.city.launcher import CityLauncher, CityConfig
+from aim.node.registry import NodeRegistry, NodeRecord
+from aim.identity.ledger import LegacyLedger
+from aim.identity.signature import CreatorSignature, ORIGIN_CREATOR
+from aim.protocol.message import AIMMessage, Intent
+from aim.city.roles import CityRole, CityEventKind
+from aim.city.governor import CityGovernorBot
+from aim.city.citizen import CitizenNode
+from aim.city.protector import ProtectionAgent
+from aim.city.builder import BuilderBot
+from aim.city.educator import EducationBot
+from aim.city.architect import ArchitectBot
+from aim.city.integrity import IntegrityGuard
+from aim.city.launcher import CityLauncher, CityConfig
 
 
 # ---------------------------------------------------------------------------
@@ -149,7 +149,7 @@ class TestCityGovernorBot:
     @pytest.mark.asyncio
     async def test_query_handler_uses_engine(self):
         gov = self._make()
-        msg = MesharaMessage.query("tell me about the governor", sender_id="cli")
+        msg = AIMMessage.query("tell me about the governor", sender_id="cli")
         response = await gov._handler.dispatch(msg)
         assert response is not None
         assert "governor" in response.payload["result"]["answer"].lower()
@@ -188,7 +188,7 @@ class TestCitizenNode:
     @pytest.mark.asyncio
     async def test_query_includes_citizen_metadata(self):
         c = self._make("Dave")
-        msg = MesharaMessage.query("who am i", sender_id="cli")
+        msg = AIMMessage.query("who am i", sender_id="cli")
         response = await c._handler.dispatch(msg)
         result = response.payload["result"]
         assert result["role"] == "citizen"
@@ -373,16 +373,16 @@ class TestEducationBot:
 
     def test_default_topics_loaded(self):
         e = self._make()
-        assert "meshara" in e._knowledge
+        assert "aim" in e._knowledge
         assert "city" in e._knowledge
         assert "security" in e._knowledge
 
     @pytest.mark.asyncio
     async def test_lookup_known_topic(self):
         e = self._make()
-        result = await e._task_lookup({"keyword": "meshara"})
+        result = await e._task_lookup({"keyword": "aim"})
         assert result["status"] == "ok"
-        assert "Meshara" in result["content"]
+        assert "AIM" in result["content"]
 
     @pytest.mark.asyncio
     async def test_lookup_unknown_topic(self):
@@ -407,15 +407,15 @@ class TestEducationBot:
     async def test_list_topics(self):
         e = self._make()
         result = await e._task_list_topics({})
-        assert "meshara" in result["topics"]
+        assert "aim" in result["topics"]
         assert result["total"] >= len(result["topics"])
 
     @pytest.mark.asyncio
     async def test_query_uses_knowledge_engine(self):
         e = self._make()
-        msg = MesharaMessage.query("tell me about meshara", sender_id="cli")
+        msg = AIMMessage.query("tell me about aim", sender_id="cli")
         response = await e._handler.dispatch(msg)
-        assert "Meshara" in response.payload["result"]["answer"]
+        assert "AIM" in response.payload["result"]["answer"]
 
     def test_extra_knowledge_merged(self):
         e = self._make(extra={"custom_topic": "Custom answer."})
@@ -574,11 +574,11 @@ class TestCityLauncher:
         ))
         # Manually build bots without calling launch() (which starts servers)
         cfg = launcher.config
-        from meshara.city.governor  import CityGovernorBot
-        from meshara.city.protector import ProtectionAgent
-        from meshara.city.builder   import BuilderBot
-        from meshara.city.educator  import EducationBot
-        from meshara.city.architect import ArchitectBot
+        from aim.city.governor  import CityGovernorBot
+        from aim.city.protector import ProtectionAgent
+        from aim.city.builder   import BuilderBot
+        from aim.city.educator  import EducationBot
+        from aim.city.architect import ArchitectBot
 
         governor  = CityGovernorBot(host=cfg.host, port=cfg.governor_port,   registry=launcher._registry, ledger=launcher._ledger)
         protector = ProtectionAgent(host=cfg.host, port=cfg.protector_port,  registry=launcher._registry, ledger=launcher._ledger)

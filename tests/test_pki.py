@@ -1,8 +1,8 @@
-"""Tests for the Meshara optional Ed25519 PKI layer (meshara/identity/pki.py)."""
+"""Tests for the AIM optional Ed25519 PKI layer (aim/identity/pki.py)."""
 
 import pytest
 
-from meshara.identity.pki import NodeKeyPair, is_pki_available
+from aim.identity.pki import NodeKeyPair, is_pki_available
 
 
 # ---------------------------------------------------------------------------
@@ -60,7 +60,7 @@ class TestNodeKeyPairGenerate:
 class TestSigning:
     def test_sign_returns_bytes(self):
         kp = NodeKeyPair.generate()
-        sig = kp.sign(b"hello meshara")
+        sig = kp.sign(b"hello aim")
         assert isinstance(sig, bytes)
         assert len(sig) == 64  # Ed25519 signatures are always 64 bytes
 
