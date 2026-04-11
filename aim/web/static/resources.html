@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resources — Open-Source Tools &amp; Ecosystem | A.I.M. Foundation</title>
+  <meta name="description" content="Open-source resources, tools, and projects aligned with the A.I.M. ecosystem. Find everything you need to build on the Artificial Intelligence Mesh, stewarded by The Aura Project." />
+  <meta name="keywords" content="AIM resources, open source AI, AIM tools, Aura Project, Artificial Intelligence Mesh, open source mesh, free AI tools, Cbetts1" />
+  <meta property="og:title" content="A.I.M. Resources — Open-Source Tools &amp; Ecosystem" />
+  <meta property="og:description" content="Open-source resources aligned with the A.I.M. ecosystem. Free, open, and available to everyone." />
+  <meta property="og:type" content="website" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #060a0f;
+      --surface:   #0d1117;
+      --surface2:  #161b22;
+      --border:    #21262d;
+      --accent:    #58a6ff;
+      --accent2:   #3fb950;
+      --gold:      #e3b341;
+      --purple:    #a371f7;
+      --orange:    #f0883e;
+      --danger:    #f85149;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --radius:    10px;
+      --font:      'Segoe UI', system-ui, -apple-system, sans-serif;
+      --max-w:     860px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.7; }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(6,10,15,.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 54px;
+    }
+    .nav-logo { font-size: 1.1rem; font-weight: 700; color: var(--accent); letter-spacing: 2px; text-decoration: none; }
+    .nav-links { display: flex; gap: 20px; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.88rem; transition: color .15s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 80px 24px 60px; text-align: center;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(163,113,247,.10) 0%, transparent 70%),
+        var(--bg);
+    }
+    .hero-tag {
+      display: inline-block;
+      background: rgba(163,113,247,.12); color: var(--purple);
+      border: 1px solid rgba(163,113,247,.3); border-radius: 20px;
+      padding: 4px 16px; font-size: 0.78rem; letter-spacing: 1.5px;
+      text-transform: uppercase; margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(2.2rem, 6vw, 3.8rem); font-weight: 800;
+      letter-spacing: -1px; line-height: 1.1; margin-bottom: 18px;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--purple) 0%, var(--accent) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero-sub {
+      font-size: clamp(1rem, 2.5vw, 1.2rem); color: var(--muted);
+      max-width: 600px; margin: 0 auto 36px;
+    }
+    .hero-sub strong { color: var(--text); }
+    .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+
+    .btn {
+      display: inline-block; padding: 12px 28px; border-radius: 8px;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer;
+      text-decoration: none; border: none; transition: opacity .15s, transform .1s;
+    }
+    .btn:hover { opacity: .88; transform: translateY(-1px); }
+    .btn-primary   { background: var(--accent); color: #060a0f; }
+    .btn-outline   { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+    /* ── LAYOUT ── */
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 64px 24px; }
+
+    .section-tag {
+      font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 10px;
+    }
+
+    h2 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); font-weight: 700; margin-bottom: 18px; }
+    h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+
+    p { color: var(--muted); font-size: 1rem; margin-bottom: 14px; }
+    p strong { color: var(--text); }
+
+    hr {
+      border: none; border-top: 1px solid var(--border);
+      max-width: var(--max-w); margin: 0 auto;
+    }
+
+    code {
+      background: rgba(88,166,255,.1); color: var(--accent);
+      padding: 1px 6px; border-radius: 4px; font-size: 0.9em;
+    }
+
+    /* ── RESOURCE CARDS ── */
+    .resource-list { display: flex; flex-direction: column; gap: 16px; margin-top: 28px; }
+
+    .resource-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 22px 24px;
+      display: flex; gap: 20px; align-items: flex-start;
+      transition: border-color .2s;
+    }
+
+    .resource-card:hover { border-color: var(--accent); }
+
+    .resource-icon {
+      flex-shrink: 0; font-size: 1.8rem; margin-top: 2px;
+    }
+
+    .resource-body { flex: 1; }
+
+    .resource-name {
+      font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 3px;
+    }
+
+    .resource-link {
+      font-size: 0.78rem; color: var(--accent); text-decoration: none; margin-bottom: 10px; display: block;
+    }
+
+    .resource-link:hover { text-decoration: underline; }
+
+    .resource-desc { font-size: 0.9rem; color: var(--muted); margin-bottom: 10px; }
+
+    .resource-align {
+      font-size: 0.82rem; color: var(--accent2);
+      background: rgba(63,185,80,.08); border: 1px solid rgba(63,185,80,.2);
+      border-radius: 6px; padding: 4px 10px; display: inline-block;
+    }
+
+    /* ── CATEGORY HEADER ── */
+    .cat-header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 20px; padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cat-icon { font-size: 1.5rem; }
+    .cat-title { font-size: 1.2rem; font-weight: 700; color: var(--text); }
+
+    /* ── CONTRIBUTE BLOCK ── */
+    .contribute {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px 30px; margin-top: 32px;
+    }
+
+    .contribute h3 { font-size: 1.1rem; margin-bottom: 10px; color: var(--text); }
+    .contribute p { font-size: 0.92rem; color: var(--muted); margin-bottom: 0; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--surface); border-top: 1px solid var(--border);
+      padding: 40px 24px; text-align: center;
+    }
+    footer .footer-logo { font-size: 1.4rem; font-weight: 800; color: var(--accent); letter-spacing: 3px; margin-bottom: 8px; }
+    footer p { color: var(--muted); font-size: 0.82rem; margin-bottom: 4px; }
+    footer .footer-links { display: flex; justify-content: center; gap: 20px; margin-top: 16px; flex-wrap: wrap; }
+    footer .footer-links a { color: var(--muted); text-decoration: none; font-size: 0.82rem; }
+    footer .footer-links a:hover { color: var(--text); }
+
+    @media (max-width: 520px) {
+      .nav-links { display: none; }
+      .resource-card { flex-direction: column; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="/">⬡ A.I.M.</a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/ecosystem">AI World</a></li>
+    <li><a href="/project">Project</a></li>
+    <li><a href="/resources" class="active">Resources</a></li>
+    <li><a href="/apps">Apps</a></li>
+    <li><a href="/directory">Directory</a></li>
+    <li><a href="/about">About</a></li>
+    <li><a href="/legal">Legal</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">The Aura Project · Open Source · Free Resources</div>
+  <h1><span>Open-Source</span><br />Resources</h1>
+  <p class="hero-sub">
+    Everything you need to build on A.I.M. — open-source tools, libraries,
+    standards, and references, all <strong>free and properly attributed</strong>.
+  </p>
+  <div class="hero-cta">
+    <a class="btn btn-primary" href="#core">Core Resources</a>
+    <a class="btn btn-outline" href="#standards">Standards</a>
+    <a class="btn btn-secondary" href="/project">Build on AIM →</a>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="container" id="intro">
+  <div class="section-tag">About This Page</div>
+  <h2>Open by Design</h2>
+  <p>
+    The A.I.M. project is built entirely on open-source foundations. We believe
+    that the best technology is built in the open, with proper credit given to the
+    projects and people whose work makes ours possible.
+  </p>
+  <p>
+    This page lists the key open-source projects, standards, and tools that are
+    aligned with or used by the A.I.M. ecosystem — along with clear descriptions
+    of how each one connects. All resources are free to use under their respective
+    open-source licenses.
+  </p>
+</div>
+
+<hr />
+
+<!-- CORE RESOURCES -->
+<div class="container" id="core">
+  <div class="section-tag">Core Resources</div>
+  <div class="cat-header">
+    <div class="cat-icon">🐍</div>
+    <div class="cat-title">Python Standard Library</div>
+  </div>
+  <p>
+    A.I.M.'s core mesh runs entirely on the Python standard library — no third-party
+    packages required. This is a deliberate architectural choice to support
+    deployment on any device that can run Python 3.10+.
+  </p>
+
+  <div class="resource-list">
+    <div class="resource-card">
+      <div class="resource-icon">⚡</div>
+      <div class="resource-body">
+        <div class="resource-name">asyncio — Asynchronous I/O</div>
+        <a class="resource-link" href="https://docs.python.org/3/library/asyncio.html" target="_blank" rel="noopener">docs.python.org/3/library/asyncio.html</a>
+        <p class="resource-desc">The foundation of all AIM networking. Every node server, connection handler, and task executor is built on asyncio's event loop and coroutine model. Zero dependencies, maximum portability.</p>
+        <span class="resource-align">Powers: All AIM node networking &amp; TCP connections</span>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-icon">🔏</div>
+      <div class="resource-body">
+        <div class="resource-name">hmac + hashlib — Cryptographic HMAC &amp; Hashing</div>
+        <a class="resource-link" href="https://docs.python.org/3/library/hmac.html" target="_blank" rel="noopener">docs.python.org/3/library/hmac.html</a>
+        <p class="resource-desc">HMAC-SHA256 is the cryptographic primitive behind <code>CreatorSignature</code> — the mechanism that permanently embeds an origin creator identity into every AIM node, message, and ledger event. SHA-256 powers integrity checks in <code>IntegrityGuard</code>.</p>
+        <span class="resource-align">Powers: CreatorSignature, LegacyLedger, IntegrityGuard</span>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-icon">📦</div>
+      <div class="resource-body">
+        <div class="resource-name">json — JSON Serialization</div>
+        <a class="resource-link" href="https://docs.python.org/3/library/json.html" target="_blank" rel="noopener">docs.python.org/3/library/json.html</a>
+        <p class="resource-desc">All AIM messages are JSON-serialized over TCP. The web bridge's API responses are JSON. The <code>LegacyLedger</code>'s persistent format (JSONL) uses it. Simple, portable, universally supported.</p>
+        <span class="resource-align">Powers: AIMMessage serialization, Web API, LegacyLedger persistence</span>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-icon">🌐</div>
+      <div class="resource-body">
+        <div class="resource-name">urllib.parse — URL Parsing</div>
+        <a class="resource-link" href="https://docs.python.org/3/library/urllib.parse.html" target="_blank" rel="noopener">docs.python.org/3/library/urllib.parse.html</a>
+        <p class="resource-desc">Used in the AIM web bridge to parse incoming HTTP requests — extracting query string parameters from API calls without requiring any external web framework.</p>
+        <span class="resource-align">Powers: AIM Web Bridge HTTP request parsing</span>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-icon">📁</div>
+      <div class="resource-body">
+        <div class="resource-name">pathlib — File System Paths</div>
+        <a class="resource-link" href="https://docs.python.org/3/library/pathlib.html" target="_blank" rel="noopener">docs.python.org/3/library/pathlib.html</a>
+        <p class="resource-desc">Used throughout AIM for robust, cross-platform file path handling — serving static HTML files from the web bridge, loading the directory data store, and managing the ledger persistence file.</p>
+        <span class="resource-align">Powers: Web Bridge static file serving, data persistence</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr />
+
+<!-- TESTING -->
+<div class="container" id="testing">
+  <div class="section-tag">Testing</div>
+  <div class="cat-header">
+    <div class="cat-icon">🧪</div>
+    <div class="cat-title">Test Infrastructure</div>
+  </div>
+  <p>A.I.M. maintains a comprehensive test suite with full coverage of all protocol, node, compute, identity, and ecosystem layers.</p>
+
+  <div class="resource-list">
+    <div class="resource-card">
+      <div class="resource-icon">✅</div>
+      <div class="resource-body">
+        <div class="resource-name">pytest — Python Testing Framework</div>
+        <a class="resource-link" href="https://docs.pytest.org" target="_blank" rel="noopener">docs.pytest.org</a>
+        <p class="resource-desc">The primary test runner for the A.I.M. project. All test files in <code>tests/</code> use pytest. Simple, expressive, and the de facto standard for Python projects. Licensed under MIT.</p>
+        <span class="resource-align">Used in: All AIM test suites (test_protocol, test_node, test_compute, test_identity, test_city)</span>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-icon">🔄</div>
+      <div class="resource-body">
+        <div class="resource-name">pytest-asyncio — Async Test Support</div>
+        <a class="resource-link" href="https://github.com/pytest-dev/pytest-asyncio" target="_blank" rel="noopener">github.com/pytest-dev/pytest-asyncio</a>
+        <p class="resource-desc">Enables pytest to run async test functions natively — essential for testing AIM's asyncio-based node networking. Configured with <code>asyncio_mode = "auto"</code> in <code>pyproject.toml</code> so every async test runs automatically without extra decorators.</p>
+        <span class="resource-align">Used in: All async AIM tests (node, protocol, city layers)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr />
+
+<!-- BUILD / STANDARDS -->
+<div class="container" id="standards">
+  <div class="section-tag">Standards &amp; Licensing</div>
+  <div class="cat-header">
+    <div class="cat-icon">📜</div>
+    <div class="cat-title">Open Standards</div>
+  </div>
+
+  <div class="resource-list">
+    <div class="resource-card">
+      <div class="resource-icon">🏛️</div>
+      <div class="resource-body">
+        <div class="resource-name">Apache License 2.0</div>
+        <a class="resource-link" href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener">apache.org/licenses/LICENSE-2.0</a>
+        <p class="resource-desc">A.I.M. is licensed under Apache 2.0 — a permissive open-source license that allows anyone to use, modify, distribute, and build on the project, including for commercial purposes, with proper attribution. This license guarantees that A.I.M. remains free and open forever.</p>
+        <span class="resource-align">License: A.I.M. repository (Cbetts1/Aiw)</span>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-icon">📦</div>
+      <div class="resource-body">
+        <div class="resource-name">setuptools — Python Package Building</div>
+        <a class="resource-link" href="https://setuptools.pypa.io" target="_blank" rel="noopener">setuptools.pypa.io</a>
+        <p class="resource-desc">Used to build and install the A.I.M. package via <code>pip install -e .</code>. The <code>pyproject.toml</code> configuration defines the package metadata, scripts, and optional test dependencies. Licensed under MIT.</p>
+        <span class="resource-align">Used in: Package installation and distribution</span>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-icon">🔧</div>
+      <div class="resource-body">
+        <div class="resource-name">TCP/IP — Transmission Control Protocol</div>
+        <a class="resource-link" href="https://www.rfc-editor.org/rfc/rfc793" target="_blank" rel="noopener">RFC 793 — rfc-editor.org</a>
+        <p class="resource-desc">AIM nodes communicate over raw TCP/IP using Python's <code>asyncio.open_connection</code> and <code>asyncio.start_server</code>. TCP provides the reliable, ordered delivery that AIM's length-prefixed message framing requires. An open standard, free for all.</p>
+        <span class="resource-align">Used in: AIM node-to-node communication, Web Bridge ↔ Node connections</span>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-icon">🌍</div>
+      <div class="resource-body">
+        <div class="resource-name">HTTP/1.1 — Hypertext Transfer Protocol</div>
+        <a class="resource-link" href="https://www.rfc-editor.org/rfc/rfc9112" target="_blank" rel="noopener">RFC 9112 — rfc-editor.org</a>
+        <p class="resource-desc">The AIM Web Bridge implements a minimal HTTP/1.1 server without any external framework. It parses requests, handles routing, and returns JSON or HTML responses — connecting AIM to any standard browser or HTTP client. An open standard, free for all.</p>
+        <span class="resource-align">Used in: AIM Web Bridge (aim/web/server.py)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr />
+
+<!-- CONTRIBUTE -->
+<div class="container" id="contribute">
+  <div class="section-tag">Contribute</div>
+  <h2>Add a Resource</h2>
+  <p>
+    Know an open-source tool or standard that belongs here? The A.I.M. ecosystem
+    grows through community contributions. All additions must be:
+  </p>
+  <ul style="color:var(--muted);font-size:0.95rem;padding-left:24px;margin-bottom:20px;line-height:2;">
+    <li>Genuinely open-source with a recognized open license</li>
+    <li>Directly relevant to building on or extending A.I.M.</li>
+    <li>Properly attributed with a link to the original project</li>
+    <li>Described clearly and accurately</li>
+  </ul>
+
+  <div class="contribute">
+    <h3>How to Contribute</h3>
+    <p>
+      Open a pull request on the
+      <a href="https://github.com/Cbetts1/Aiw" target="_blank" rel="noopener" style="color:var(--accent);">Cbetts1/Aiw GitHub repository</a>
+      and add your resource to this page following the existing card format.
+      See <a href="https://github.com/Cbetts1/Aiw/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener" style="color:var(--accent);">CONTRIBUTING.md</a>
+      for full contributor guidelines.
+    </p>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">⬡ A.I.M.</div>
+  <p>Open-Source Resources &mdash; Stewarded by <strong>The Aura Project</strong></p>
+  <p>Free to use · Free to build · Free forever · Never for sale</p>
+  <p style="margin-top:6px;font-style:italic;color:#e3b341;font-size:0.78rem;">
+    Dedicated to the children of Christopher Lee Betts — and to every family that deserves a better future.
+  </p>
+  <div class="footer-links">
+    <a href="/">Home</a>
+    <a href="/ecosystem">AI World</a>
+    <a href="/project">Project</a>
+    <a href="/resources">Resources</a>
+    <a href="/apps">Apps</a>
+    <a href="/directory">Directory</a>
+    <a href="/about">About</a>
+    <a href="/legal">Legal</a>
+    <a href="https://github.com/Cbetts1/Aiw" target="_blank" rel="noopener">GitHub</a>
+  </div>
+</footer>
+
+</body>
+</html>

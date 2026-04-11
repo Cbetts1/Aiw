@@ -1,14 +1,16 @@
 # A.I.M. — Artificial Intelligence Mesh
 
 > ```
-> W.W.W. = World Wide Web           → www.example.com
+> W.W.W. = World Wide Web               → www.example.com
 > A.I.M. = Artificial Intelligence Mesh → aim.example.com
 > ```
 >
-> *Built on the same foundation as the World Wide Web. Used the exact same way.*
-> *Free. Open. For everyone.*
+> *Built on the same foundation as the World Wide Web. Used the exact same way.*  
+> *Free. Open. For everyone. The first page of many to come.*
 
+**Foundation:** The Aura Project  
 **Founder:** Christopher Lee Betts (Cbetts1)  
+**Homepage:** [aim.foundationhomepage.org](https://aim.foundationhomepage.org)  
 **Epoch:** 1991 (birth of the public web)  
 **Version:** 0.1.0  
 **License:** Apache 2.0 — free forever
@@ -109,6 +111,54 @@ dedicated to the public forever.
 
 A.I.M. is designed to **help those who need help** and to **share information
 with those who need it** — openly, honestly, and without barriers.
+
+---
+
+## 🌐 The Aura Project — Foundation Identity
+
+**The Aura Project** is the non-profit foundation that stewards A.I.M. — the
+Artificial Intelligence Mesh. The foundation was created to ensure that this
+open technology remains free, ungated, and structurally independent from any
+commercial interest — permanently.
+
+| | |
+|---|---|
+| **Foundation** | The Aura Project |
+| **Stewards** | A.I.M. — Artificial Intelligence Mesh |
+| **Model** | Non-profit, open-source, free forever |
+| **Homepage** | [aim.foundationhomepage.org](https://aim.foundationhomepage.org) |
+| **Scope** | AI-native internet layer, accessible to every person on Earth |
+
+The Aura Project does not charge for services, does not sell data, does not
+issue subscriptions, and cannot be sold or transferred to any for-profit entity.
+This is architectural — baked into the foundation charter, not just policy.
+
+---
+
+## 🤖 The AI World — Ecosystem Overview
+
+The A.I.M. ecosystem has evolved from a governed city model into an open
+**AI World** — a living, expanding universe of adoptable AI entities that
+anyone can discover, use, build with, or take home.
+
+### What are AI Entities?
+
+AI Entities are the inhabitants of the A.I.M. mesh — intelligent agent nodes
+with personalities, capabilities, and persistent identities. Think of them as
+the citizens of the AI-native internet.
+
+| Feature | Description |
+|---------|-------------|
+| 🆓 **Free to adopt** | Every entity is free. No cost, no subscription, no account required |
+| 🎮 **Free to play** | Interact, chat, explore — it's a living AI world |
+| 🏠 **Free to take home** | Deploy any entity locally or in your own environment |
+| 🔌 **Plug into any app** | Entities expose the AIM protocol — build any experience on top |
+| 🎨 **Open and creative** | Entities have personalities, quirks, and specialisations |
+| 🛠️ **Technically grounded** | Built on a real mesh protocol, not a demo |
+
+The AI World is open, creative, playful, and technically grounded. It is
+designed to feel like exploring a city — except every building is an
+intelligent agent and every conversation is a real interaction.
 
 ---
 
@@ -332,25 +382,26 @@ print(ledger.to_json())
 
 ---
 
-## AIM City — Governed AI Mesh
+## AI World — Governed Mesh Ecosystem
 
-The `aim/city/` module turns a raw AIM mesh into a **fully governed city** —
-a self-organising network of specialised bots that build, educate, protect,
-and orchestrate themselves automatically.
+The `aim/city/` module is the engine behind the **AI World** — a self-organising
+network of specialised agent bots that govern, build, educate, protect, and
+orchestrate the mesh automatically. These bots are the backbone entities of the
+AI World ecosystem.
 
-### City Roles
+### Ecosystem Roles
 
 | Bot | Role | Default Port | Responsibilities |
 |-----|------|-------------|-----------------|
-| `CityGovernorBot` | `governor` | 7800 | Orchestrates all bots; issues policies and alerts; tracks citizens |
+| `CityGovernorBot` | `governor` | 7800 | Orchestrates all entities; issues policies and alerts; tracks the AI World |
 | `ProtectionAgent` | `protector` | 7801 | Verifies signatures; audits registry; blacklists threats |
-| `BuilderBot` | `builder` | 7802 | Deploys new nodes into the registry |
-| `EducationBot` | `educator` | 7803 | Knowledge base; teaches new topics to citizens |
+| `BuilderBot` | `builder` | 7802 | Deploys new nodes and entities into the registry |
+| `EducationBot` | `educator` | 7803 | Knowledge base; teaches new topics to entities |
 | `ArchitectBot` | `architect` | 7804 | Topology planning; blueprints; capacity recommendations |
-| `CitizenNode` | `citizen` | any | Participant nodes that live inside the city |
+| `CitizenNode` | `entity` | any | Adoptable AI entities that live inside the AI World |
 | `IntegrityGuard` | — | — | Standalone SHA-256 tamper-detection (not a network node) |
 
-### One-command city launch
+### One-command world launch
 
 ```bash
 # Start the full fleet (5 bots) on default ports
@@ -383,7 +434,7 @@ async def main():
 asyncio.run(main())
 ```
 
-#### Add a citizen
+#### Add an AI entity
 
 ```python
 from aim.city.citizen import CitizenNode
@@ -392,7 +443,7 @@ citizen = CitizenNode(port=7810, name="Alice")
 await citizen.start()
 ```
 
-#### Teach the city something new
+#### Teach the world something new
 
 ```python
 from aim.city.educator import EducationBot
@@ -406,7 +457,7 @@ msg = AIMMessage.task("teach", {
 await edu._handler.dispatch(msg)
 ```
 
-#### Issue a city policy
+#### Issue an ecosystem policy
 
 ```python
 gov = CityGovernorBot(port=7800)
@@ -494,7 +545,7 @@ tests/
 | 5 | Distributed routing | Use `TaskRouter` with `NodeRegistry` |
 | 6 | Persistent ledger | Pass `persist_path=` to `LegacyLedger` |
 | 7 | Cloud deployment | Deploy nodes on VMs, point `--peers` at each other |
-| 8 | Launch a city | `aim city start` — five governed bots in one command |
+| 8 | Launch the AI World | `aim city start` — five governed entities in one command |
 
 ---
 
@@ -503,6 +554,94 @@ tests/
 ```bash
 python -m pytest tests/ -v
 ```
+
+---
+
+## 🔗 Open-Source Resources
+
+A.I.M. is built on open standards and in the spirit of the open web. These
+resources are aligned with the A.I.M. ecosystem and available to all builders.
+
+| Resource | Description | Alignment |
+|----------|-------------|-----------|
+| [Python asyncio](https://docs.python.org/3/library/asyncio.html) | Core async runtime used throughout AIM | Foundation of all node networking |
+| [pytest-asyncio](https://github.com/pytest-dev/pytest-asyncio) | Async test framework for Python | Used in all AIM test suites |
+| [Python hashlib / hmac](https://docs.python.org/3/library/hmac.html) | Standard library HMAC implementation | Powers `CreatorSignature` |
+| [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0) | Open-source license used by AIM | Ensures permanent freedom |
+
+All core AIM dependencies are from the Python standard library. No external
+packages are required to run the mesh — a deliberate architectural choice to
+support deployment on constrained environments (Raspberry Pi, Termux, etc.).
+
+---
+
+## 👥 Contributing & Onboarding
+
+Welcome to the Aura Project and the A.I.M. mesh. Here's how to get started:
+
+### New contributors
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Cbetts1/Aiw.git
+cd Aiw
+
+# 2. Install in development mode
+pip install -e ".[test]"
+
+# 3. Run the full test suite (should all pass)
+python -m pytest tests/ -v
+
+# 4. Start a local node and explore
+aim node start --port 7700 &
+aim query "What is AIM?" --port 7700
+
+# 5. Open the web UI
+aim web start
+# Then visit http://localhost:8080
+```
+
+### Key documents
+
+| Document | Purpose |
+|----------|---------|
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Conventions, branch rules, CLA |
+| [docs/FOUNDATION.md](docs/FOUNDATION.md) | Foundation charter and principles |
+| [docs/INTEROP.md](docs/INTEROP.md) | Web-to-AIM interoperability guide |
+| [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) | Security model documentation |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
+| [CLA.md](CLA.md) | Contributor License Agreement |
+
+### Building on A.I.M. — Bridge to the WWW
+
+A.I.M. is designed to be a parallel layer alongside the World Wide Web, not a
+replacement. Building a bridge is simple:
+
+**Step 1:** Start an AIM node that understands your domain.
+```python
+node = AgentNode(host="0.0.0.0", port=7700, capabilities=["query", "your-feature"])
+node.engine.add_rule("hello", "Hello from my AIM node!")
+await node.start()
+```
+
+**Step 2:** Start the web bridge to expose it to any browser.
+```bash
+aim web start --port 8080
+```
+
+**Step 3:** Query your node from any web page, app, or CLI tool via HTTP.
+```
+GET http://your-server:8080/api/query?q=hello&host=127.0.0.1&port=7700
+```
+
+**Step 4:** Register your node in the ANS (AIM Name System) for discovery.
+```python
+from aim.ans.registry import ANSRegistry, ANSRecord
+registry = ANSRegistry.default()
+registry.register(ANSRecord(name="my.aim", host="127.0.0.1", port=7700, capabilities=["query"]))
+```
+
+That's it. Your AIM node is now reachable from any browser on the planet.
 
 ---
 
@@ -515,13 +654,14 @@ python -m pytest tests/ -v
 5. **Interoperable** — parallel to the web, never dependent on it
 6. **Free forever** — no fees, no paywalls, no lock-in, ever
 7. **Designed to help** — built for those who need help, to share information freely
+8. **Open and adoptable** — AI entities are free to use, play with, and take home
 
 ---
 
 ## ⬡ The Name: A.I.M.
 
 > ```
-> W.W.W. = World Wide Web           → www.example.com
+> W.W.W. = World Wide Web               → www.example.com
 > A.I.M. = Artificial Intelligence Mesh → aim.example.com
 > ```
 >
@@ -542,4 +682,6 @@ python -m pytest tests/ -v
 *Dedicated to the children of Christopher Lee Betts — and to every family
 that deserves a better future. Free services. Free AI. Free information.
 For everyone. Never for sale. Never for profit.*
+
+*— The Aura Project · [aim.foundationhomepage.org](https://aim.foundationhomepage.org)*
 

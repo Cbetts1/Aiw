@@ -1,14 +1,21 @@
-# Contributing to AIM — Artificial Intelligence Mesh
+# Contributing to A.I.M. — Artificial Intelligence Mesh
 
-Thank you for your interest in contributing.  This document describes the
-conventions, branch strategy, and design rules that keep the AIM codebase
+**Foundation:** The Aura Project  
+**Repository:** [Cbetts1/Aiw](https://github.com/Cbetts1/Aiw)  
+**Homepage:** [aim.foundationhomepage.org](https://aim.foundationhomepage.org)
+
+Thank you for your interest in contributing. This document describes the
+conventions, branch strategy, and design rules that keep the A.I.M. codebase
 coherent and trustworthy.
 
-AIM is built to be the twin of the World Wide Web — free, open, and accessible
+A.I.M. is built to be the twin of the World Wide Web — free, open, and accessible
 to all of humanity. It is designed to help those who need help, to share
 information with those who need it, and to close the gap between those who have
 access to knowledge and those who don't. We welcome contributions from anyone,
 anywhere.
+
+The Aura Project is a non-profit foundation. All contributions to this
+repository become part of that open, permanently free ecosystem.
 
 ---
 
