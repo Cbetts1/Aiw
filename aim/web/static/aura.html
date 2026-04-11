@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Aura Project — Foundation | Free Public AI Tools for Everyone</title>
+  <meta name="description" content="The Aura Project is the non-profit foundation stewarding A.I.M. — the Artificial Intelligence Mesh. Free public tools, crisis resources, education, and a future 200B AI model for everyone." />
+  <meta name="keywords" content="Aura Project, AIM foundation, non-profit AI, free AI tools, crisis resources, job search, education, mental health resources, Cbetts1, Artificial Intelligence Mesh" />
+  <meta property="og:title" content="The Aura Project — Non-Profit AI Foundation" />
+  <meta property="og:description" content="Free tools, real solutions, open AI — stewarding the AIM mesh for all of humanity." />
+  <meta property="og:type" content="website" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #05080d;
+      --surface:   #0b0f18;
+      --surface2:  #131929;
+      --border:    #1e2535;
+      --accent:    #a371f7;
+      --accent2:   #3fb950;
+      --gold:      #e3b341;
+      --sky:       #58a6ff;
+      --danger:    #f85149;
+      --pink:      #f778ba;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --radius:    12px;
+      --font:      'Segoe UI', system-ui, -apple-system, sans-serif;
+      --max-w:     840px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.65;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      background: rgba(5,8,13,.94);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 56px;
+    }
+
+    .nav-logo { font-size: 1.1rem; font-weight: 800; color: var(--accent); letter-spacing: 1px; text-decoration: none; }
+    .nav-logo span { color: var(--gold); }
+
+    .nav-links { display: flex; gap: 20px; list-style: none; flex-wrap: wrap; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.88rem; transition: color .15s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+
+    .nav-badge {
+      display: inline-block;
+      background: rgba(163,113,247,.15);
+      color: var(--accent);
+      border: 1px solid rgba(163,113,247,.3);
+      border-radius: 10px;
+      padding: 1px 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: .5px;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 100px 24px 80px;
+      background:
+        radial-gradient(ellipse 90% 60% at 50% -10%, rgba(163,113,247,.18) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 40% at 80% 80%, rgba(227,179,65,.07) 0%, transparent 60%),
+        var(--bg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23a371f7' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(163,113,247,.1);
+      color: var(--accent);
+      border: 1px solid rgba(163,113,247,.25);
+      border-radius: 24px;
+      padding: 6px 18px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+
+    .hero-eyebrow .dot {
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%,100% { opacity:.4; transform: scale(1); }
+      50%      { opacity:1;  transform: scale(1.4); }
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 9vw, 6rem);
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 .aura-word {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--gold) 50%, var(--pink) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      color: var(--muted);
+      max-width: 620px;
+      margin: 0 auto 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-sub strong { color: var(--text); }
+
+    .hero-nonprofit {
+      display: inline-block;
+      background: rgba(63,185,80,.08);
+      color: var(--accent2);
+      border: 1px solid rgba(63,185,80,.25);
+      border-radius: 8px;
+      padding: 6px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 36px;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 13px 32px;
+      border-radius: 8px;
+      font-size: 0.98rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      transition: opacity .15s, transform .1s;
+    }
+
+    .btn:hover  { opacity: .88; transform: translateY(-2px); }
+    .btn:active { opacity: .7;  transform: translateY(0); }
+
+    .btn-primary  { background: var(--accent); color: #05080d; }
+    .btn-outline  { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .btn-gold     { background: var(--gold); color: #05080d; }
+    .btn-secondary{ background: var(--surface2); color: var(--text); }
+
+    /* ── STATS STRIP ── */
+    .stats-strip {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 0;
+    }
+
+    .stats-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 12px 16px;
+      border-right: 1px solid var(--border);
+    }
+
+    .stat-item:last-child { border-right: none; }
+
+    .stat-val {
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: var(--accent);
+      display: block;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-val.gold  { color: var(--gold); }
+    .stat-val.green { color: var(--accent2); }
+
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ── SECTIONS ── */
+    .section {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+
+    .section-wide {
+      max-width: 1020px;
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+
+    .section-tag {
+      font-size: 0.72rem;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .section-tag.gold  { color: var(--gold); }
+    .section-tag.green { color: var(--accent2); }
+
+    .section h2 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem);
+      font-weight: 800;
+      margin-bottom: 20px;
+      letter-spacing: -.5px;
+    }
+
+    .section p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin-bottom: 16px;
+      max-width: 680px;
+    }
+
+    .section p strong { color: var(--text); }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      max-width: 1020px;
+      margin: 0 auto;
+    }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 36px;
+    }
+
+    .tool-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      transition: border-color .2s, transform .15s;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tool-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .tool-card.urgent { border-color: rgba(248,81,73,.4); }
+    .tool-card.urgent:hover { border-color: var(--danger); }
+
+    .tool-card.gold-card { border-color: rgba(227,179,65,.3); }
+    .tool-card.gold-card:hover { border-color: var(--gold); }
+
+    .tool-icon {
+      font-size: 2rem;
+      margin-bottom: 14px;
+      display: block;
+    }
+
+    .tool-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .tool-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.55;
+      flex: 1;
+      margin-bottom: 16px;
+    }
+
+    .tool-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tool-link {
+      display: inline-block;
+      background: rgba(163,113,247,.1);
+      color: var(--accent);
+      border: 1px solid rgba(163,113,247,.2);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background .15s, border-color .15s;
+    }
+
+    .tool-link:hover { background: rgba(163,113,247,.2); border-color: var(--accent); }
+
+    .tool-link.sky   { background: rgba(88,166,255,.1); color: var(--sky); border-color: rgba(88,166,255,.2); }
+    .tool-link.sky:hover { background: rgba(88,166,255,.2); border-color: var(--sky); }
+
+    .tool-link.green { background: rgba(63,185,80,.1); color: var(--accent2); border-color: rgba(63,185,80,.2); }
+    .tool-link.green:hover { background: rgba(63,185,80,.2); border-color: var(--accent2); }
+
+    .tool-link.gold  { background: rgba(227,179,65,.1); color: var(--gold); border-color: rgba(227,179,65,.2); }
+    .tool-link.gold:hover { background: rgba(227,179,65,.2); border-color: var(--gold); }
+
+    .tool-tag {
+      display: inline-block;
+      background: rgba(248,81,73,.1);
+      color: var(--danger);
+      border: 1px solid rgba(248,81,73,.2);
+      border-radius: 6px;
+      padding: 2px 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .tool-tag.free {
+      background: rgba(63,185,80,.08);
+      color: var(--accent2);
+      border-color: rgba(63,185,80,.2);
+    }
+
+    /* ── CHARTER CARDS ── */
+    .charter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+      margin-top: 32px;
+    }
+
+    .charter-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      border-top: 3px solid var(--accent);
+    }
+
+    .charter-card.gold-top  { border-top-color: var(--gold); }
+    .charter-card.green-top { border-top-color: var(--accent2); }
+    .charter-card.sky-top   { border-top-color: var(--sky); }
+
+    .charter-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .charter-card p {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin: 0;
+      max-width: none;
+    }
+
+    /* ── AURA CHAT SECTION ── */
+    .aura-chat {
+      background: linear-gradient(
+        135deg,
+        rgba(163,113,247,.08) 0%,
+        rgba(227,179,65,.05) 50%,
+        rgba(88,166,255,.06) 100%
+      );
+      border: 1px solid rgba(163,113,247,.2);
+      border-radius: 20px;
+      padding: 60px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      margin-top: 40px;
+    }
+
+    .aura-chat::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -20%;
+      width: 140%; height: 200%;
+      background: radial-gradient(ellipse at center, rgba(163,113,247,.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .aura-orb {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 35%, rgba(163,113,247,.6) 0%, rgba(88,166,255,.3) 50%, transparent 75%);
+      border: 1px solid rgba(163,113,247,.3);
+      margin: 0 auto 28px;
+      position: relative;
+      z-index: 1;
+      animation: aura-pulse 4s ease-in-out infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.8rem;
+    }
+
+    @keyframes aura-pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(163,113,247,0), 0 0 30px rgba(163,113,247,.2); }
+      50%      { box-shadow: 0 0 0 16px rgba(163,113,247,.06), 0 0 60px rgba(163,113,247,.35); }
+    }
+
+    .aura-chat h2 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: -.5px;
+      margin-bottom: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .aura-chat h2 span {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .aura-chat p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 600px;
+      margin: 0 auto 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .aura-chat p strong { color: var(--text); }
+
+    .aura-coming-soon {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(5,8,13,.6);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 28px;
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin: 24px auto 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .aura-coming-soon .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(163,113,247,.3);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1.4s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .aura-specs {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .aura-spec {
+      background: rgba(163,113,247,.1);
+      border: 1px solid rgba(163,113,247,.2);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ── PROMISE BARS ── */
+    .promise-list {
+      margin-top: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .promise-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+    }
+
+    .promise-icon {
+      font-size: 1.3rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .promise-text strong {
+      display: block;
+      font-size: 0.95rem;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+
+    .promise-text span {
+      font-size: 0.87rem;
+      color: var(--muted);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 40px 24px;
+      text-align: center;
+    }
+
+    .footer-inner {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .footer-logo {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+
+    .footer-logo span { color: var(--gold); }
+
+    footer p {
+      font-size: 0.84rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin: 18px 0;
+      list-style: none;
+    }
+
+    .footer-links a { color: var(--muted); font-size: 0.85rem; text-decoration: none; transition: color .15s; }
+    .footer-links a:hover { color: var(--text); }
+
+    .np-seal {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(63,185,80,.07);
+      border: 1px solid rgba(63,185,80,.2);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 0.8rem;
+      color: var(--accent2);
+      margin-top: 10px;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      nav { padding: 0 16px; }
+      .nav-links { gap: 14px; }
+      .aura-chat { padding: 40px 24px; }
+      .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
+      .stat-item:last-child { border-bottom: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-logo">A·I·M <span>⬡</span></a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/about">About</a></li>
+    <li><a href="/aura" class="active">Aura Project <span class="nav-badge">Foundation</span></a></li>
+    <li><a href="/city">AI City</a></li>
+    <li><a href="/apps">Apps</a></li>
+    <li><a href="/directory">Directory</a></li>
+    <li><a href="/legal">Legal</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">
+    <span class="dot"></span>
+    Non-Profit Foundation &nbsp;·&nbsp; Free Forever
+  </div>
+  <h1>The <span class="aura-word">Aura</span><br>Project</h1>
+  <p class="hero-sub">
+    The non-profit foundation stewarding <strong>A.I.M.</strong> — the Artificial
+    Intelligence Mesh. Deep public tools, real solvable issues, and a future 200-billion
+    parameter AI — all <strong>free, open, and for everyone.</strong>
+  </p>
+  <div class="hero-nonprofit">⚖️ &nbsp;Registered Non-Profit &nbsp;·&nbsp; No Services Sold &nbsp;·&nbsp; No Data Sold &nbsp;·&nbsp; Free Forever</div>
+  <div class="hero-cta">
+    <a href="#tools" class="btn btn-primary">Explore Free Tools</a>
+    <a href="#aura-ai" class="btn btn-outline">Aura AI — Coming Soon</a>
+    <a href="#foundation" class="btn btn-secondary">Foundation Docs</a>
+  </div>
+</div>
+
+<!-- STATS STRIP -->
+<div class="stats-strip">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <span class="stat-val">$0</span>
+      <span class="stat-label">Cost to Anyone</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-val gold">200B</span>
+      <span class="stat-label">Aura AI Parameters</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-val green">∞</span>
+      <span class="stat-label">Tools — Always Free</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-val">0</span>
+      <span class="stat-label">Services Sold</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-val gold">1</span>
+      <span class="stat-label">Mission: Help Everyone</span>
+    </div>
+  </div>
+</div>
+
+<!-- MISSION -->
+<section class="section" id="mission">
+  <div class="section-tag">Our Mission</div>
+  <h2>Intelligence should be a public utility — not a luxury</h2>
+  <p>
+    We live in the Information Age — yet billions of people still lack access to the
+    information, training, and resources they need. <strong>The Aura Project exists
+    to end that gap.</strong>
+  </p>
+  <p>
+    Every tool on this page is free. Every service on the A.I.M. mesh is free.
+    Nothing will ever be sold. The Aura Project is a <strong>non-profit foundation</strong>
+    — it does not generate revenue, does not sell data, and does not charge for anything.
+    Donations go directly to charitable causes that help those in need.
+  </p>
+  <p>
+    <strong>This is not a business model. This is a founding principle that can never
+    be revoked.</strong>
+  </p>
+</section>
+
+<hr class="divider" />
+
+<!-- TOOLS -->
+<div class="section-wide" id="tools">
+  <div class="section-tag green">Free Public Tools</div>
+  <h2 style="font-size: clamp(1.7rem,4vw,2.5rem); font-weight:800; letter-spacing:-.5px; margin-bottom:12px;">
+    Deep tools. Real solvable issues.
+  </h2>
+  <p style="color:var(--muted); max-width:700px; margin-bottom:0;">
+    These tools connect you directly to real resources — crisis lines, legal aid,
+    job search, education, health information, housing assistance, and more.
+    <strong style="color:var(--text)">Always free. Always open. No account required.</strong>
+  </p>
+
+  <div class="tools-grid">
+
+    <!-- CRISIS -->
+    <div class="tool-card urgent">
+      <span class="tool-tag">Crisis · Urgent</span>
+      <span class="tool-icon">🆘</span>
+      <div class="tool-name">Crisis &amp; Emergency Resources</div>
+      <div class="tool-desc">
+        Immediate access to crisis hotlines, suicide prevention, domestic violence
+        support, and emergency services — available 24/7, worldwide.
+      </div>
+      <div class="tool-links">
+        <a href="https://988lifeline.org" target="_blank" rel="noopener noreferrer" class="tool-link sky">988 Lifeline (US)</a>
+        <a href="https://www.crisistextline.org" target="_blank" rel="noopener noreferrer" class="tool-link sky">Crisis Text Line</a>
+        <a href="https://www.thehotline.org" target="_blank" rel="noopener noreferrer" class="tool-link sky">DV Hotline</a>
+        <a href="https://findahelpline.com" target="_blank" rel="noopener noreferrer" class="tool-link">Global Lines</a>
+      </div>
+    </div>
+
+    <!-- MENTAL HEALTH -->
+    <div class="tool-card">
+      <span class="tool-tag free">Free</span>
+      <span class="tool-icon">🧠</span>
+      <div class="tool-name">Mental Health Resources</div>
+      <div class="tool-desc">
+        Free mental health screenings, therapy finders, community support groups,
+        and evidence-based self-help tools. No insurance required.
+      </div>
+      <div class="tool-links">
+        <a href="https://www.mentalhealth.gov" target="_blank" rel="noopener noreferrer" class="tool-link sky">MentalHealth.gov</a>
+        <a href="https://www.nami.org" target="_blank" rel="noopener noreferrer" class="tool-link sky">NAMI</a>
+        <a href="https://www.samhsa.gov/find-help/national-helpline" target="_blank" rel="noopener noreferrer" class="tool-link green">SAMHSA Helpline</a>
+        <a href="https://screening.mhanational.org" target="_blank" rel="noopener noreferrer" class="tool-link">Free Screening</a>
+      </div>
+    </div>
+
+    <!-- LEGAL AID -->
+    <div class="tool-card">
+      <span class="tool-tag free">Free</span>
+      <span class="tool-icon">⚖️</span>
+      <div class="tool-name">Free Legal Aid Finder</div>
+      <div class="tool-desc">
+        Find free and low-cost legal help in your area. Civil legal aid, tenant rights,
+        immigration assistance, consumer protection, and more.
+      </div>
+      <div class="tool-links">
+        <a href="https://www.lawhelp.org" target="_blank" rel="noopener noreferrer" class="tool-link sky">LawHelp.org</a>
+        <a href="https://www.lsc.gov/about-lsc/what-legal-aid" target="_blank" rel="noopener noreferrer" class="tool-link sky">Legal Services Corp</a>
+        <a href="https://www.aclu.org" target="_blank" rel="noopener noreferrer" class="tool-link green">ACLU</a>
+        <a href="https://www.immigrationadvocates.org" target="_blank" rel="noopener noreferrer" class="tool-link">Immigration Aid</a>
+      </div>
+    </div>
+
+    <!-- JOB SEARCH -->
+    <div class="tool-card">
+      <span class="tool-tag free">Free</span>
+      <span class="tool-icon">💼</span>
+      <div class="tool-name">Job Search &amp; Career Tools</div>
+      <div class="tool-desc">
+        Free résumé builders, job listings, interview prep, career counseling, and
+        workforce development resources for every level and industry.
+      </div>
+      <div class="tool-links">
+        <a href="https://www.careeronestop.org" target="_blank" rel="noopener noreferrer" class="tool-link green">CareerOneStop</a>
+        <a href="https://www.dol.gov/general/topic/unemployment-insurance" target="_blank" rel="noopener noreferrer" class="tool-link sky">DOL Resources</a>
+        <a href="https://resume.io" target="_blank" rel="noopener noreferrer" class="tool-link sky">Resume Builder</a>
+        <a href="https://www.goodwill.org/jobs-training" target="_blank" rel="noopener noreferrer" class="tool-link">Goodwill Jobs</a>
+      </div>
+    </div>
+
+    <!-- EDUCATION -->
+    <div class="tool-card gold-card">
+      <span class="tool-tag free">Free</span>
+      <span class="tool-icon">📚</span>
+      <div class="tool-name">Free Education &amp; Training</div>
+      <div class="tool-desc">
+        Open courseware, coding bootcamps, GED prep, digital literacy, and skills
+        training from accredited institutions — completely free.
+      </div>
+      <div class="tool-links">
+        <a href="https://www.khanacademy.org" target="_blank" rel="noopener noreferrer" class="tool-link gold">Khan Academy</a>
+        <a href="https://www.coursera.org/courses?query=free" target="_blank" rel="noopener noreferrer" class="tool-link gold">Coursera Free</a>
+        <a href="https://ocw.mit.edu" target="_blank" rel="noopener noreferrer" class="tool-link sky">MIT OpenCourseWare</a>
+        <a href="https://www.freecodecamp.org" target="_blank" rel="noopener noreferrer" class="tool-link green">freeCodeCamp</a>
+      </div>
+    </div>
+
+    <!-- HOUSING -->
+    <div class="tool-card">
+      <span class="tool-tag free">Free</span>
+      <span class="tool-icon">🏠</span>
+      <div class="tool-name">Housing &amp; Homelessness Assistance</div>
+      <div class="tool-desc">
+        Emergency shelter finders, rental assistance programs, tenant rights guides,
+        HUD resources, and transitional housing support.
+      </div>
+      <div class="tool-links">
+        <a href="https://www.hud.gov/findshelter" target="_blank" rel="noopener noreferrer" class="tool-link sky">HUD Shelter Finder</a>
+        <a href="https://www.211.org" target="_blank" rel="noopener noreferrer" class="tool-link sky">211.org</a>
+        <a href="https://www.endhomelessness.org" target="_blank" rel="noopener noreferrer" class="tool-link green">End Homelessness</a>
+        <a href="https://nlihc.org" target="_blank" rel="noopener noreferrer" class="tool-link">NLIHC</a>
+      </div>
+    </div>
+
+    <!-- FOOD SECURITY -->
+    <div class="tool-card">
+      <span class="tool-tag free">Free</span>
+      <span class="tool-icon">🍎</span>
+      <div class="tool-name">Food Security &amp; SNAP</div>
+      <div class="tool-desc">
+        Find local food banks, apply for SNAP/EBT benefits, locate school meal programs,
+        and connect with community nutrition resources near you.
+      </div>
+      <div class="tool-links">
+        <a href="https://www.feedingamerica.org/find-your-local-foodbank" target="_blank" rel="noopener noreferrer" class="tool-link green">Feeding America</a>
+        <a href="https://www.fns.usda.gov/snap" target="_blank" rel="noopener noreferrer" class="tool-link sky">SNAP Benefits</a>
+        <a href="https://www.nokidhungry.org" target="_blank" rel="noopener noreferrer" class="tool-link sky">No Kid Hungry</a>
+        <a href="https://www.foodpantries.org" target="_blank" rel="noopener noreferrer" class="tool-link">Food Pantries</a>
+      </div>
+    </div>
+
+    <!-- HEALTH CARE -->
+    <div class="tool-card">
+      <span class="tool-tag free">Free</span>
+      <span class="tool-icon">🏥</span>
+      <div class="tool-name">Health Care Access</div>
+      <div class="tool-desc">
+        Find free clinics, apply for Medicaid, locate community health centers, and
+        access prescription assistance programs — regardless of income or status.
+      </div>
+      <div class="tool-links">
+        <a href="https://findahealthcenter.hrsa.gov" target="_blank" rel="noopener noreferrer" class="tool-link sky">HRSA Health Centers</a>
+        <a href="https://www.healthcare.gov" target="_blank" rel="noopener noreferrer" class="tool-link sky">Healthcare.gov</a>
+        <a href="https://www.needymeds.org" target="_blank" rel="noopener noreferrer" class="tool-link green">NeedyMeds Rx</a>
+        <a href="https://freeclinics.com" target="_blank" rel="noopener noreferrer" class="tool-link">Free Clinics</a>
+      </div>
+    </div>
+
+    <!-- DIGITAL LITERACY -->
+    <div class="tool-card gold-card">
+      <span class="tool-tag free">Free</span>
+      <span class="tool-icon">💻</span>
+      <div class="tool-name">Digital Literacy &amp; Tech Help</div>
+      <div class="tool-desc">
+        Learn to use computers, the internet, smartphones, and software. Free classes,
+        guides, and one-on-one help for beginners of every age and background.
+      </div>
+      <div class="tool-links">
+        <a href="https://www.digitallearn.org" target="_blank" rel="noopener noreferrer" class="tool-link gold">DigitalLearn.org</a>
+        <a href="https://www.gcfglobal.org" target="_blank" rel="noopener noreferrer" class="tool-link gold">GCF Global</a>
+        <a href="https://www.everyoneon.org" target="_blank" rel="noopener noreferrer" class="tool-link sky">EveryoneOn</a>
+        <a href="https://www.lifelonglearning.com" target="_blank" rel="noopener noreferrer" class="tool-link">Lifelong Learning</a>
+      </div>
+    </div>
+
+    <!-- VETERANS -->
+    <div class="tool-card">
+      <span class="tool-tag free">Free</span>
+      <span class="tool-icon">🎖️</span>
+      <div class="tool-name">Veterans &amp; Military Resources</div>
+      <div class="tool-desc">
+        VA benefits navigation, veterans crisis line, job placement, mental health
+        services, and community support for active-duty, veterans, and their families.
+      </div>
+      <div class="tool-links">
+        <a href="https://www.va.gov" target="_blank" rel="noopener noreferrer" class="tool-link sky">VA.gov</a>
+        <a href="https://www.veteranscrisisline.net" target="_blank" rel="noopener noreferrer" class="tool-link sky">Veterans Crisis Line</a>
+        <a href="https://www.nvf.org" target="_blank" rel="noopener noreferrer" class="tool-link green">NVF</a>
+        <a href="https://www.hirevets.gov" target="_blank" rel="noopener noreferrer" class="tool-link">HireVets</a>
+      </div>
+    </div>
+
+    <!-- DISABILITY -->
+    <div class="tool-card">
+      <span class="tool-tag free">Free</span>
+      <span class="tool-icon">♿</span>
+      <div class="tool-name">Disability Services &amp; Rights</div>
+      <div class="tool-desc">
+        ADA rights information, SSI/SSDI assistance, accessible technology resources,
+        independent living centers, and disability employment services.
+      </div>
+      <div class="tool-links">
+        <a href="https://www.ada.gov" target="_blank" rel="noopener noreferrer" class="tool-link sky">ADA.gov</a>
+        <a href="https://www.ssa.gov/disability" target="_blank" rel="noopener noreferrer" class="tool-link sky">SSA Disability</a>
+        <a href="https://www.disability.gov" target="_blank" rel="noopener noreferrer" class="tool-link green">Disability.gov</a>
+        <a href="https://www.abilityone.gov" target="_blank" rel="noopener noreferrer" class="tool-link">AbilityOne</a>
+      </div>
+    </div>
+
+    <!-- CHILDREN & FAMILIES -->
+    <div class="tool-card">
+      <span class="tool-tag free">Free</span>
+      <span class="tool-icon">👨‍👩‍👧‍👦</span>
+      <div class="tool-name">Children &amp; Family Support</div>
+      <div class="tool-desc">
+        Child care assistance, Head Start, WIC nutrition program, child abuse hotline,
+        foster care resources, and family counseling services.
+      </div>
+      <div class="tool-links">
+        <a href="https://www.childwelfare.gov" target="_blank" rel="noopener noreferrer" class="tool-link sky">Child Welfare</a>
+        <a href="https://www.wic.usda.gov" target="_blank" rel="noopener noreferrer" class="tool-link sky">WIC Program</a>
+        <a href="https://www.headstart.gov" target="_blank" rel="noopener noreferrer" class="tool-link green">Head Start</a>
+        <a href="https://www.childhelp.org/hotline" target="_blank" rel="noopener noreferrer" class="tool-link">Childhelp Hotline</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- AURA AI CHAT SECTION -->
+<section class="section" id="aura-ai">
+  <div class="section-tag gold">200B AI Model</div>
+  <h2>Aura — The Foundation AI</h2>
+  <p>
+    The Aura Project is building <strong>Aura</strong> — a 200-billion parameter
+    AI language model that will be offered completely free through the A.I.M. mesh.
+    No subscription. No API key. No account. Just intelligence, for everyone.
+  </p>
+  <p>
+    Aura is specifically trained to be a <strong>compassionate, helpful, and honest
+    assistant</strong> for people navigating real challenges: finding resources,
+    understanding complex systems, learning new skills, and getting practical help
+    without judgment.
+  </p>
+
+  <div class="aura-chat">
+    <div class="aura-orb">✦</div>
+    <h2><span>Aura AI</span> — 200B Parameters</h2>
+    <p>
+      A large-scale foundation model trained to help everyone — regardless of
+      income, location, or circumstance. <strong>Free. Open. Always available.</strong>
+    </p>
+    <p>Aura will understand context, remember your session, speak many languages,
+      and help you navigate the full suite of Aura Project tools.</p>
+
+    <div class="aura-specs">
+      <span class="aura-spec">200B Parameters</span>
+      <span class="aura-spec">Multilingual</span>
+      <span class="aura-spec">Context-Aware</span>
+      <span class="aura-spec">Session Memory</span>
+      <span class="aura-spec">AIM Mesh Native</span>
+      <span class="aura-spec">No Account Required</span>
+      <span class="aura-spec">24/7 Availability</span>
+    </div>
+
+    <div class="aura-coming-soon">
+      <div class="spinner"></div>
+      Building Aura — Chat interface coming soon. The model is in active development.
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- FOUNDATION -->
+<div class="section-wide" id="foundation">
+  <div class="section-tag gold">Foundation Documents</div>
+  <h2 style="font-size: clamp(1.7rem,4vw,2.5rem); font-weight:800; letter-spacing:-.5px; margin-bottom:12px;">
+    Legal Foundation &amp; Governance
+  </h2>
+  <p style="color:var(--muted); max-width:700px; margin-bottom:32px;">
+    The Aura Project is governed by an open, transparent charter. All foundational
+    documents are public. Our non-profit status is permanent and irrevocable by design.
+  </p>
+
+  <div class="charter-grid">
+    <div class="charter-card">
+      <h3>📜 Non-Profit Forever Clause</h3>
+      <p>
+        The Aura Project is and will always be a non-profit organization. It cannot
+        be converted to a for-profit entity by any individual, board, or legal action.
+        This clause is structural — it is baked into the founding documents.
+      </p>
+    </div>
+    <div class="charter-card gold-top">
+      <h3>🔒 Free Forever Clause</h3>
+      <p>
+        All services, tools, and AI capabilities provided through The Aura Project
+        and the A.I.M. mesh are free forever. No future leadership or board may
+        introduce fees, paywalls, or paid tiers for any service.
+      </p>
+    </div>
+    <div class="charter-card green-top">
+      <h3>🚫 No Data Sale Pledge</h3>
+      <p>
+        The Aura Project does not collect personally identifiable information, does
+        not sell data to third parties, and does not use user interactions for
+        advertising or commercial profiling.
+      </p>
+    </div>
+    <div class="charter-card sky-top">
+      <h3>📣 Bill of Rights — AIM Users</h3>
+      <p>
+        Every person who uses the A.I.M. mesh has the right to free access, the right
+        to privacy, the right to honest AI, and the right to appeal decisions made by
+        mesh governance. These rights are permanent.
+      </p>
+    </div>
+    <div class="charter-card">
+      <h3>💸 Donation Policy</h3>
+      <p>
+        Voluntary donations to The Aura Project are accepted. 100% of donations go
+        to charitable causes and operational costs. No individual draws compensation
+        from donations. Financial records are published annually.
+      </p>
+    </div>
+    <div class="charter-card gold-top">
+      <h3>🌍 Open Source Pledge</h3>
+      <p>
+        All A.I.M. mesh software is open-source under the Apache 2.0 license. The
+        code is free to inspect, fork, modify, and redistribute. No proprietary lock-in,
+        ever.
+      </p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- PROMISES -->
+<section class="section" id="promises">
+  <div class="section-tag">Our Commitments</div>
+  <h2>What we promise — always</h2>
+  <p>These are not aspirations. They are structural commitments built into the foundation of The Aura Project.</p>
+
+  <div class="promise-list">
+    <div class="promise-item">
+      <div class="promise-icon">🆓</div>
+      <div class="promise-text">
+        <strong>Every service is free — forever</strong>
+        <span>No fees, no subscriptions, no paywalls, no premium tiers. Everything, always free.</span>
+      </div>
+    </div>
+    <div class="promise-item">
+      <div class="promise-icon">🏛️</div>
+      <div class="promise-text">
+        <strong>Non-profit forever — never for sale</strong>
+        <span>The Aura Project cannot be sold, acquired, or converted to a for-profit entity by anyone.</span>
+      </div>
+    </div>
+    <div class="promise-item">
+      <div class="promise-icon">🔐</div>
+      <div class="promise-text">
+        <strong>Your data is never sold</strong>
+        <span>We do not collect, sell, or profit from your personal information. Your privacy is absolute.</span>
+      </div>
+    </div>
+    <div class="promise-item">
+      <div class="promise-icon">⚖️</div>
+      <div class="promise-text">
+        <strong>We operate within the law</strong>
+        <span>All tools link to legal, legitimate public resources. We comply fully with applicable law.</span>
+      </div>
+    </div>
+    <div class="promise-item">
+      <div class="promise-icon">🤝</div>
+      <div class="promise-text">
+        <strong>Honest AI — no manipulation</strong>
+        <span>Aura AI is designed to be truthful, helpful, and non-manipulative. It will tell you when it doesn't know.</span>
+      </div>
+    </div>
+    <div class="promise-item">
+      <div class="promise-icon">🌱</div>
+      <div class="promise-text">
+        <strong>Dedicated to future generations</strong>
+        <span>This foundation exists for the children of the world — those here now and those yet to come.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">The <span>Aura</span> Project &nbsp;·&nbsp; A·I·M Foundation</div>
+    <p>The non-profit foundation stewarding the Artificial Intelligence Mesh.</p>
+    <p>Free tools. Free AI. Free information. <strong>For everyone. Forever.</strong></p>
+    <ul class="footer-links">
+      <li><a href="/">AIM Home</a></li>
+      <li><a href="/about">About AIM</a></li>
+      <li><a href="/city">AI City</a></li>
+      <li><a href="/apps">Apps</a></li>
+      <li><a href="/directory">Directory</a></li>
+      <li><a href="/legal">Legal &amp; Privacy</a></li>
+    </ul>
+    <div class="np-seal">
+      ⚖️ &nbsp; Non-Profit Organization &nbsp;·&nbsp; No services sold &nbsp;·&nbsp; Apache 2.0 Open Source
+    </div>
+    <p style="margin-top:16px; font-size:0.78rem;">
+      Founded by Christopher Lee Betts (Cbetts1) &nbsp;·&nbsp;
+      Dedicated to the children of Christopher Lee Betts and to every family that deserves a better future.
+    </p>
+    <p style="margin-top:6px; font-size:0.75rem;">
+      <a href="/legal">Terms of Use</a> &nbsp;·&nbsp;
+      <a href="/legal">Privacy Policy</a> &nbsp;·&nbsp;
+      <a href="https://github.com/Cbetts1/Aiw" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>

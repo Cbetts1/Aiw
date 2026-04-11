@@ -301,6 +301,10 @@ def _serve_static(path: str) -> tuple[int, bytes, str]:
         "/index.html":    "index.html",
         "/about":         "about.html",
         "/about.html":    "about.html",
+        "/aura":          "aura.html",
+        "/aura.html":     "aura.html",
+        "/city":          "city.html",
+        "/city.html":     "city.html",
         "/apps":          "apps.html",
         "/apps.html":     "apps.html",
         "/directory":     "directory.html",
@@ -334,6 +338,8 @@ async def _handle_connection(
         logger.debug("HTTP %s %s %s", method, path, qs)
 
         if path in ("/", "/index.html", "/about", "/about.html",
+                    "/aura", "/aura.html",
+                    "/city", "/city.html",
                     "/apps", "/apps.html",
                     "/directory", "/directory.html",
                     "/legal", "/legal.html"):
