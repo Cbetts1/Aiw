@@ -45,7 +45,67 @@ def _setup_logging(verbose: bool = False) -> None:
 # Command handlers
 # ---------------------------------------------------------------------------
 
-async def _cmd_node_start(args: argparse.Namespace) -> None:
+async def _cmd_relay_start(args: argparse.Namespace) -> None:
+    from aim.relay.node import RelayNode
+    from aim.relay.registry import RelayRegistry, RelayRecord
+    from aim.identity.signature import CreatorSignature
+
+    sig = CreatorSignature()
+    relay_registry = RelayRegistry.default()
+    node = RelayNode(
+        host=args.host,
+        port=args.port,
+        relay_registry=relay_registry,
+        heartbeat_interval=args.heartbeat_interval,
+        enable_cache=not args.no_cache,
+    )
+
+    # Register node-level record so other router/registry code can find us
+    registry = NodeRegistry.default()
+    registry.register(NodeRecord(
+        node_id=node.node_id,
+        host=node.host,
+        port=node.port,
+        capabilities=["relay", "forward"],
+        creator=node.creator,
+    ))
+
+    ledger = default_ledger()
+    ledger.record(EventKind.NODE_CREATED, node.node_id, payload={"host": args.host, "port": args.port, "role": "relay"}, signature=sig)
+
+    print(f"\n{'='*60}")
+    print(f"  AIM Relay Node  v{__version__}")
+    print(f"  Origin creator : {__origin__}")
+    print(f"  Node ID        : {node.node_id}")
+    print(f"  Address        : {args.host}:{args.port}")
+    print(f"  Cache          : {'enabled' if not args.no_cache else 'disabled'}")
+    print(f"  Heartbeat      : every {args.heartbeat_interval}s")
+    print(f"{'='*60}\n")
+
+    # Announce to seed relay peers if given
+    if args.peers:
+        for peer_str in args.peers.split(","):
+            peer_str = peer_str.strip()
+            if ":" in peer_str:
+                peer_host, peer_port_str = peer_str.rsplit(":", 1)
+                try:
+                    peer_port = int(peer_port_str)
+                    relay_registry.register(RelayRecord(
+                        relay_id=f"peer-{peer_host}-{peer_port}",
+                        host=peer_host,
+                        port=peer_port,
+                    ))
+                    await node.announce_to(peer_host, peer_port)
+                except ValueError:
+                    pass
+
+    try:
+        await node.start()
+    except KeyboardInterrupt:
+        await node.stop()
+
+
+
     sig = CreatorSignature()
     node = AgentNode(
         host=args.host,
@@ -293,6 +353,159 @@ def _cmd_dns_records(args: argparse.Namespace) -> None:
     print(json.dumps({"count": len(records), "records": records}, indent=2))
 
 
+async def _cmd_mesh_up(args: argparse.Namespace) -> None:
+    from aim.node.agent import AgentNode
+    from aim.identity.ledger import EventKind
+
+    sig = CreatorSignature()
+    ledger = default_ledger()
+
+    tasks: list[asyncio.Task] = []  # type: ignore[type-arg]
+    node = AgentNode(
+        host=args.host,
+        port=args.node_port,
+        capabilities=["query", "task"],
+    )
+    node_record = {
+        "node_id": node.node_id,
+        "host": args.host,
+        "port": args.node_port,
+    }
+    payload: dict[str, object] = {"node": node_record}
+
+    gateway = None
+    relay = None
+
+    if args.with_gateway:
+        from aim.gateway.node import GatewayNode
+        relay_peers: list[tuple[str, int]] = []
+        if args.with_relay:
+            relay_peers = [(args.host, args.relay_port)]
+        gateway = GatewayNode(
+            host=args.host,
+            port=args.gateway_port,
+            relay_peers=relay_peers,
+            ledger=ledger,
+        )
+        payload["gateway"] = {"host": args.host, "port": args.gateway_port}
+
+    if args.with_relay:
+        from aim.relay.node import RelayNode
+        relay = RelayNode(
+            host=args.host,
+            port=args.relay_port,
+            ledger=ledger,
+        )
+        # Teach the relay about the local compute node
+        relay._route_table[node.node_id] = (args.host, args.node_port)
+        payload["relay"] = {"host": args.host, "port": args.relay_port}
+
+    ledger.record(
+        EventKind.MESH_NODE_JOINED, node.node_id,
+        payload=payload,  # type: ignore[arg-type]
+        signature=sig,
+    )
+
+    print(f"\n{'='*62}")
+    print(f"  AIM MESH UP  v{__version__}  (creator: {__origin__})")
+    print(f"{'='*62}")
+    print(f"  Node      : {args.host}:{args.node_port}  [{node.node_id[:8]}]")
+    if gateway:
+        print(f"  Gateway   : {args.host}:{args.gateway_port}")
+    if relay:
+        print(f"  Relay     : {args.host}:{args.relay_port}")
+    print(f"{'='*62}\n")
+
+    coros = [node.start()]
+    if gateway:
+        coros.append(gateway.start())
+    if relay:
+        coros.append(relay.start())
+
+    try:
+        await asyncio.gather(*[asyncio.create_task(c) for c in coros])
+    except KeyboardInterrupt:
+        await node.stop()
+        if gateway:
+            await gateway.stop()
+        if relay:
+            await relay.stop()
+        ledger.record(EventKind.NODE_STOPPED, node.node_id)
+
+
+async def _cmd_mesh_join(args: argparse.Namespace) -> None:
+    from aim.node.agent import AgentNode
+    from aim.identity.ledger import EventKind
+    from aim.gateway.node import GatewayNode
+
+    sig = CreatorSignature()
+    ledger = default_ledger()
+
+    # Parse gateway address
+    gw_host, gw_port = args.gateway, 7600
+    if ":" in args.gateway:
+        parts = args.gateway.rsplit(":", 1)
+        try:
+            gw_host, gw_port = parts[0], int(parts[1])
+        except ValueError:
+            pass
+
+    node = AgentNode(
+        host=args.host,
+        port=args.node_port,
+        capabilities=["query", "task"],
+    )
+
+    ledger.record(
+        EventKind.MESH_NODE_JOINED, node.node_id,
+        payload={"gateway": f"{gw_host}:{gw_port}", "host": args.host, "port": args.node_port},
+        signature=sig,
+    )
+
+    print(f"\n{'='*62}")
+    print(f"  AIM MESH JOIN  v{__version__}  (creator: {__origin__})")
+    print(f"{'='*62}")
+    print(f"  Node      : {args.host}:{args.node_port}  [{node.node_id[:8]}]")
+    print(f"  Gateway   : {gw_host}:{gw_port}")
+    print(f"{'='*62}\n")
+
+    await node.announce_to(gw_host, gw_port)
+
+    try:
+        await node.start()
+    except KeyboardInterrupt:
+        await node.stop()
+        ledger.record(EventKind.NODE_STOPPED, node.node_id)
+
+
+async def _cmd_mesh_status(args: argparse.Namespace) -> None:
+    msg = AIMMessage.heartbeat(sender_id="cli")
+    reader, writer = await asyncio.open_connection(args.host, args.port)
+    from aim.node.base import _send_message, _recv_message
+    await _send_message(writer, msg)
+    response = await _recv_message(reader)
+    writer.close()
+    if response:
+        result = response.payload.get("result", response.payload)
+        print(json.dumps(result, indent=2))
+    else:
+        print("No response from mesh node.", file=sys.stderr)
+
+
+async def _cmd_mesh_peers(args: argparse.Namespace) -> None:
+    msg = AIMMessage.task("relay_status", {}, sender_id="cli")
+    reader, writer = await asyncio.open_connection(args.host, args.port)
+    from aim.node.base import _send_message, _recv_message
+    await _send_message(writer, msg)
+    response = await _recv_message(reader)
+    writer.close()
+    if response:
+        result = response.payload.get("result", response.payload)
+        print(json.dumps(result, indent=2))
+    else:
+        print("No response from relay node.", file=sys.stderr)
+
+
 # ---------------------------------------------------------------------------
 # Argument parser
 # ---------------------------------------------------------------------------
@@ -306,6 +519,25 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-v", "--verbose", action="store_true")
 
     sub = parser.add_subparsers(dest="command")
+
+    # --- relay subcommand ---
+    relay_p = sub.add_parser("relay", help="AIM relay node management")
+    relay_sub = relay_p.add_subparsers(dest="relay_command")
+
+    relay_start_p = relay_sub.add_parser("start", help="Start an AIM relay node")
+    relay_start_p.add_argument("--host", default="127.0.0.1",
+                               help="Interface to bind on (default: 127.0.0.1)")
+    relay_start_p.add_argument("--port", type=int, default=7600,
+                               help="TCP port for the relay (default: 7600)")
+    relay_start_p.add_argument("--peers", default="",
+                               help="Comma-separated host:port relay peers to bootstrap from")
+    relay_start_p.add_argument("--registry", default="",
+                               help="(reserved) external registry address for future use")
+    relay_start_p.add_argument("--heartbeat-interval", type=float, default=30.0,
+                               dest="heartbeat_interval",
+                               help="Seconds between peer heartbeat sweeps (default: 30)")
+    relay_start_p.add_argument("--no-cache", action="store_true",
+                               help="Disable response caching on this relay")
 
     # --- node subcommand ---
     node_p = sub.add_parser("node", help="Node management")
@@ -447,7 +679,9 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
     _setup_logging(getattr(args, "verbose", False))
 
-    if args.command == "node" and args.node_command == "start":
+    if args.command == "relay" and getattr(args, "relay_command", None) == "start":
+        asyncio.run(_cmd_relay_start(args))
+    elif args.command == "node" and args.node_command == "start":
         asyncio.run(_cmd_node_start(args))
     elif args.command == "query":
         asyncio.run(_cmd_query(args))

@@ -16,6 +16,16 @@ Wire framing
 ------------
 Same 4-byte big-endian length prefix + UTF-8 JSON as the rest of the AIM mesh
 (imported from ``aim.node.base``).
+GatewayNode — edge-facing entry point into the AIM mesh backbone.
+
+Topology position
+-----------------
+Edge nodes (phones, browsers, IoT) ──► GatewayNode ──► RelayNode(s)
+
+The gateway maintains a *relay pool* — a list of (host, port) tuples for
+relay nodes.  On each forwarded message it picks the first healthy relay
+(round-robin).  A background health-check task heartbeats every relay at a
+configurable interval.
 """
 
 from __future__ import annotations

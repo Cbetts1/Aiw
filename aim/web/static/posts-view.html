@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A.I.M. — View Post</title>
+  <meta name="description" content="Read a post from the AIM Content Layer." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #060a0f;
+      --surface:  #0d1117;
+      --surface2: #161b22;
+      --border:   #21262d;
+      --accent:   #58a6ff;
+      --accent2:  #3fb950;
+      --gold:     #e3b341;
+      --danger:   #f85149;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --radius:   10px;
+      --font:     'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.6; }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(6,10,15,.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 54px;
+    }
+    .nav-logo { font-size: 1.15rem; font-weight: 700; color: var(--accent); letter-spacing: 2px; text-decoration: none; }
+    .nav-links { display: flex; gap: 24px; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color .15s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    /* ── BREADCRUMB ── */
+    .breadcrumb {
+      font-size: 0.82rem; color: var(--muted); margin-bottom: 28px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .breadcrumb a { color: var(--accent); text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb span { color: var(--border); }
+
+    /* ── POST ── */
+    .post-wrapper {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 32px 28px;
+    }
+
+    .post-tag {
+      font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 12px;
+    }
+
+    .post-title {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 800; line-height: 1.25;
+      margin-bottom: 16px; word-break: break-word;
+    }
+
+    .post-meta {
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      font-size: 0.82rem; color: var(--muted);
+      padding-bottom: 20px; margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .post-author::before { content: "✦ "; color: var(--accent2); }
+
+    .post-body {
+      font-size: 1rem; line-height: 1.75;
+      white-space: pre-wrap; word-break: break-word;
+      color: var(--text);
+    }
+
+    /* ── ACTIONS ── */
+    .post-actions { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 20px; border-radius: 8px;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      text-decoration: none; border: none; transition: opacity .15s, transform .1s;
+    }
+    .btn:hover { opacity: .88; transform: translateY(-1px); }
+    .btn:active { opacity: .7; transform: translateY(0); }
+    .btn-primary { background: var(--accent); color: #060a0f; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+
+    /* ── STATES ── */
+    .spinner {
+      width: 28px; height: 28px; margin: 60px auto;
+      border: 2px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-state {
+      text-align: center; padding: 60px 24px; color: var(--muted);
+    }
+    .error-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--surface); border-top: 1px solid var(--border);
+      padding: 32px 24px; text-align: center;
+    }
+    footer p { color: var(--muted); font-size: 0.8rem; margin-bottom: 4px; }
+    footer .footer-links { display: flex; justify-content: center; gap: 20px; margin-top: 12px; flex-wrap: wrap; }
+    footer .footer-links a { color: var(--muted); text-decoration: none; font-size: 0.8rem; }
+    footer .footer-links a:hover { color: var(--text); }
+
+    @media (max-width: 520px) {
+      .nav-links { display: none; }
+      .post-wrapper { padding: 20px 18px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="/">⬡ A.I.M.</a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/posts" class="active">Posts</a></li>
+    <li><a href="/feed">Feed</a></li>
+    <li><a href="/directory">Directory</a></li>
+    <li><a href="/project">Project</a></li>
+    <li><a href="/about">About</a></li>
+    <li><a href="/legal">Legal</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="/posts">← Posts</a>
+    <span>/</span>
+    <span id="breadcrumb-title">Loading…</span>
+  </div>
+
+  <div id="post-container">
+    <div class="spinner"></div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p>A.I.M. Content Layer — Stewarded by <strong>The Aura Project</strong></p>
+  <p style="margin-top:2px;color:#e3b341;font-style:italic;font-size:0.75rem;">
+    Dedicated to the children of Christopher Lee Betts — and to every family that deserves a better future.
+  </p>
+  <div class="footer-links">
+    <a href="/">Home</a>
+    <a href="/posts">Posts</a>
+    <a href="/feed">Feed</a>
+    <a href="/directory">Directory</a>
+    <a href="/about">About</a>
+    <a href="/legal">Legal</a>
+    <a href="https://github.com/Cbetts1/Aiw" target="_blank" rel="noopener">GitHub</a>
+  </div>
+</footer>
+
+<script>
+  function $(id) { return document.getElementById(id); }
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function formatDate(ts) {
+    if (!ts) return '';
+    return new Date(ts * 1000).toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+  }
+
+  function timeAgo(ts) {
+    const diff = Math.floor(Date.now() / 1000) - ts;
+    if (diff < 60)    return 'just now';
+    if (diff < 3600)  return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return Math.floor(diff / 86400) + 'd ago';
+  }
+
+  async function loadPost() {
+    const params = new URLSearchParams(window.location.search);
+    const id     = params.get('id');
+    const container   = $('post-container');
+    const breadcrumb  = $('breadcrumb-title');
+
+    if (!id) {
+      breadcrumb.textContent = 'Not found';
+      container.innerHTML = `
+        <div class="error-state">
+          <div class="icon">🔍</div>
+          <p>No post ID provided.</p>
+          <a href="/posts" style="color:var(--accent);">← Back to Posts</a>
+        </div>`;
+      return;
+    }
+
+    try {
+      const res  = await fetch('/api/content/posts/' + encodeURIComponent(id));
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        breadcrumb.textContent = 'Not found';
+        container.innerHTML = `
+          <div class="error-state">
+            <div class="icon">❌</div>
+            <p>${escHtml(data.error || 'Post not found.')}</p>
+            <a href="/posts" style="color:var(--accent);display:inline-block;margin-top:12px;">← Back to Posts</a>
+          </div>`;
+        return;
+      }
+
+      const p = data.post;
+      document.title = 'A.I.M. — ' + (p.title || 'Post');
+      breadcrumb.textContent = p.title || '(untitled)';
+
+      container.innerHTML = `
+        <div class="post-wrapper">
+          <div class="post-tag">Content Layer · READ</div>
+          <h1 class="post-title">${escHtml(p.title || '(untitled)')}</h1>
+          <div class="post-meta">
+            <span class="post-author">${escHtml(p.author || 'anonymous')}</span>
+            <span title="${escHtml(formatDate(p.timestamp))}">${timeAgo(p.timestamp || 0)}</span>
+          </div>
+          <div class="post-body">${escHtml(p.body || '')}</div>
+          <div class="post-actions">
+            <a class="btn btn-ghost" href="/posts">← All Posts</a>
+            <a class="btn btn-primary" href="/posts/create">✦ New Post</a>
+          </div>
+        </div>`;
+    } catch (e) {
+      breadcrumb.textContent = 'Error';
+      container.innerHTML = `
+        <div class="error-state">
+          <div class="icon">⚠️</div>
+          <p>Could not load post. Make sure the AIM web bridge is running.</p>
+          <a href="/posts" style="color:var(--accent);display:inline-block;margin-top:12px;">← Back to Posts</a>
+        </div>`;
+    }
+  }
+
+  loadPost();
+</script>
+
+</body>
+</html>
