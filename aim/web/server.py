@@ -46,6 +46,7 @@ from aim import __version__, __origin__
 from aim.node.base import _send_message, _recv_message
 from aim.protocol.message import AIMMessage
 from aim.ans.registry import ANSRegistry
+from aim.content.node import ContentNode
 
 logger = logging.getLogger(__name__)
 
@@ -329,6 +330,66 @@ def _handle_posts_post(body: bytes) -> tuple[int, str]:
 
 
 # ---------------------------------------------------------------------------
+# Content Layer (PUBLISH / READ / LIST via AIMMessage → ContentNode)
+# ---------------------------------------------------------------------------
+
+# Lazy singleton: created on first use so the data directory resolves correctly.
+_content_node: ContentNode | None = None
+
+
+def _get_content_node() -> ContentNode:
+    global _content_node
+    if _content_node is None:
+        _content_node = ContentNode(data_dir=_DATA_DIR)
+    return _content_node
+
+
+async def _handle_content_post(body: bytes) -> tuple[int, str]:
+    """Accept a JSON body and translate it into an AIM PUBLISH intent."""
+    try:
+        data = json.loads(body.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return 400, json.dumps({"error": "Invalid JSON body"})
+
+    title  = str(data.get("title",  "")).strip()
+    post_body = str(data.get("body", "")).strip()
+    author = str(data.get("author", "anonymous")).strip() or "anonymous"
+
+    msg      = AIMMessage.publish(title=title, body=post_body, author=author,
+                                  sender_id="web-bridge")
+    response = await _get_content_node().dispatch(msg)
+    result   = response.payload.get("result", {})
+
+    if "error" in result:
+        return 400, json.dumps(result)
+    return 201, json.dumps(result)
+
+
+async def _handle_content_list(qs: dict[str, str]) -> tuple[int, str]:
+    """Translate a GET request into an AIM LIST intent and return JSON."""
+    try:
+        limit = int(qs.get("limit", "50"))
+    except ValueError:
+        limit = 50
+
+    msg      = AIMMessage.list_content(limit=limit, sender_id="web-bridge")
+    response = await _get_content_node().dispatch(msg)
+    result   = response.payload.get("result", {})
+    return 200, json.dumps(result)
+
+
+async def _handle_content_read(content_id: str) -> tuple[int, str]:
+    """Translate a GET /<id> into an AIM READ intent and return JSON."""
+    msg      = AIMMessage.read_content(content_id=content_id, sender_id="web-bridge")
+    response = await _get_content_node().dispatch(msg)
+    result   = response.payload.get("result", {})
+
+    if "error" in result:
+        return 404, json.dumps(result)
+    return 200, json.dumps(result)
+
+
+# ---------------------------------------------------------------------------
 # API handlers
 # ---------------------------------------------------------------------------
 
@@ -454,6 +515,9 @@ def _serve_static(path: str) -> tuple[int, bytes, str]:
         "/directory.html":    "directory.html",
         "/legal":             "legal.html",
         "/legal.html":        "legal.html",
+        "/posts":             "posts-list.html",
+        "/posts/create":      "posts-create.html",
+        "/posts/view":        "posts-view.html",
     }
     filename = mapping.get(path)
     if filename is None:
@@ -686,7 +750,8 @@ async def _handle_connection(
                       "/apps", "/apps.html",
                       "/feed", "/feed.html",
                       "/directory", "/directory.html",
-                      "/legal", "/legal.html"):
+                      "/legal", "/legal.html",
+                      "/posts", "/posts/create", "/posts/view"):
             status, resp_body, ct = _serve_static(path)
             _http_response(writer, status, resp_body, ct)
 
@@ -726,6 +791,26 @@ async def _handle_connection(
                     status, resp_body = 429, _RATE_LIMIT_EXCEEDED
                 else:
                     status, resp_body = _handle_posts_post(body)
+            else:
+                status, resp_body = 405, _METHOD_NOT_ALLOWED
+            _http_response(writer, status, resp_body)
+
+        # ── Content Layer API (PUBLISH / LIST / READ) ──────────────────
+        elif path == "/api/content/posts":
+            if method == "GET":
+                status, resp_body = await _handle_content_list(qs)
+            elif method == "POST":
+                if not _check_rate_limit(peer_ip):
+                    status, resp_body = 429, _RATE_LIMIT_EXCEEDED
+                else:
+                    status, resp_body = await _handle_content_post(body)
+            else:
+                status, resp_body = 405, _METHOD_NOT_ALLOWED
+            _http_response(writer, status, resp_body)
+        elif path.startswith("/api/content/posts/"):
+            content_id = path[len("/api/content/posts/"):]
+            if method == "GET":
+                status, resp_body = await _handle_content_read(content_id)
             else:
                 status, resp_body = 405, _METHOD_NOT_ALLOWED
             _http_response(writer, status, resp_body)

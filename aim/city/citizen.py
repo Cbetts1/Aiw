@@ -1,9 +1,9 @@
 """
-CitizenNode — a participant node in the AIM city.
+EntityNode — an adoptable AI entity in the AIM world.
 
-Citizens can:
-- Join and leave the city via the Governor
-- Query any city service (education, building, architecture, etc.)
+Entities can:
+- Join and leave the AI World via the Governor
+- Query any world service (education, building, architecture, etc.)
 - Receive policy updates and alerts
 - Store and share personal memory across the mesh
 """
@@ -23,11 +23,11 @@ logger = logging.getLogger(__name__)
 
 class CitizenNode(AgentNode):
     """
-    A citizen of the AIM city.
+    An adoptable AI entity in the AIM World.
 
     Parameters
     ----------
-    name   : human-readable citizen name
+    name   : human-readable entity name
     ledger : LegacyLedger for event recording (default: global)
     All other parameters are forwarded to AgentNode / BaseNode.
     """
@@ -53,16 +53,16 @@ class CitizenNode(AgentNode):
 
         self.engine.add_rule(
             "who am i",
-            f"You are citizen '{name}' in the AIM city, governed by Cbetts1.",
+            f"You are AI entity '{name}' in the AIM World, governed by Cbetts1.",
         )
         self.engine.add_rule(
-            "city",
-            "The AIM city is governed by a CityGovernorBot that coordinates bots and citizens. "
-            "Bots provide specialised services; citizens query and use those services.",
+            "aim world",
+            "The AIM World is governed by a CityGovernorBot that coordinates entities. "
+            "Entities provide specialised services; you can query and use those services.",
         )
         self.engine.add_rule(
             "help",
-            "As a citizen you can query the Governor, Educator, Builder, and Architect. "
+            "As an AI entity you can query the Governor, Educator, Builder, and Architect. "
             "You can also store personal memory on the mesh.",
         )
 
