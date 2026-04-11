@@ -33,6 +33,9 @@ class Intent(str, Enum):
     MEMORY_SET  = "memory_set"  # write to shared cross-node memory
     MEMORY_GET  = "memory_get"  # read from shared cross-node memory
     SPAWN       = "spawn"       # request creation of a child node
+    PUBLISH     = "publish"     # publish a content item to the Content Layer
+    READ        = "read"        # read a specific content item by id
+    LIST        = "list"        # list content items
 
 
 class Status(str, Enum):
@@ -164,5 +167,46 @@ class AIMMessage:
         return cls(
             intent=Intent.ANNOUNCE,
             payload={"capabilities": capabilities},
+            sender_id=sender_id,
+        )
+
+    @classmethod
+    def publish(
+        cls,
+        title: str,
+        body: str,
+        author: str = "anonymous",
+        sender_id: str = "",
+    ) -> "AIMMessage":
+        """Publish a new content item to the Content Layer."""
+        return cls(
+            intent=Intent.PUBLISH,
+            payload={"title": title, "body": body, "author": author},
+            sender_id=sender_id,
+        )
+
+    @classmethod
+    def read_content(
+        cls,
+        content_id: str,
+        sender_id: str = "",
+    ) -> "AIMMessage":
+        """Read a specific content item by its id."""
+        return cls(
+            intent=Intent.READ,
+            payload={"id": content_id},
+            sender_id=sender_id,
+        )
+
+    @classmethod
+    def list_content(
+        cls,
+        limit: int = 50,
+        sender_id: str = "",
+    ) -> "AIMMessage":
+        """List content items from the Content Layer."""
+        return cls(
+            intent=Intent.LIST,
+            payload={"limit": limit},
             sender_id=sender_id,
         )
