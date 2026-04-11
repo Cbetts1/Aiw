@@ -1,207 +1,354 @@
 """
-Tests for aim.content.ContentLayer and ContentItem.
+Tests for the AIM Content Layer.
+
+Covers:
+- ContentItem schema and serialisation
+- ContentStore.publish / read / list
+- ContentNode handling PUBLISH, READ, LIST intents via AIMMessage
+- Protocol: new Intent values (PUBLISH, READ, LIST)
 """
 
 from __future__ import annotations
 
-import time
 import pytest
 
-from aim.content.layer import ContentLayer, ContentItem
-from aim.identity.ledger import LegacyLedger
-from aim.identity.signature import CreatorSignature
+from aim.protocol.message import AIMMessage, Intent, Status
+from aim.content.store import ContentItem, ContentStore
+from aim.content.node import ContentNode
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Intent enum
 # ---------------------------------------------------------------------------
 
-def _make_layer() -> ContentLayer:
-    return ContentLayer(ledger=LegacyLedger())
+class TestContentIntents:
+    def test_publish_intent_exists(self):
+        assert Intent.PUBLISH == "publish"
+
+    def test_read_intent_exists(self):
+        assert Intent.READ == "read"
+
+    def test_list_intent_exists(self):
+        assert Intent.LIST == "list"
+
+    def test_intents_serialise_in_message(self):
+        msg = AIMMessage(intent=Intent.PUBLISH, payload={"body": "hello"})
+        raw = msg.to_json()
+        restored = AIMMessage.from_json(raw)
+        assert restored.intent == Intent.PUBLISH
 
 
 # ---------------------------------------------------------------------------
-# ContentItem tests
+# ContentItem
 # ---------------------------------------------------------------------------
 
 class TestContentItem:
-    def test_default_fields(self):
-        item = ContentItem(body="hello")
-        assert item.content_type == "text"
-        assert not item.deleted
-        assert item.content_id  # non-empty UUID
+    def test_defaults(self):
+        item = ContentItem(body="Hello world")
+        assert item.body == "Hello world"
+        assert item.visibility == "public"
+        assert item.content_type == "post"
+        assert item.id  # non-empty UUID
+        assert item.timestamp > 0
 
-    def test_to_dict_and_from_dict(self):
-        item = ContentItem(body="world", content_type="json")
+    def test_to_dict_roundtrip(self):
+        item = ContentItem(
+            body="Test",
+            author="alice",
+            title="My Post",
+            tags=["aim", "test"],
+        )
         d = item.to_dict()
         restored = ContentItem.from_dict(d)
-        assert restored.content_id == item.content_id
-        assert restored.body == "world"
-        assert restored.content_type == "json"
+        assert restored.body == "Test"
+        assert restored.author == "alice"
+        assert restored.title == "My Post"
+        assert restored.tags == ["aim", "test"]
+        assert restored.id == item.id
+
+    def test_from_dict_ignores_unknown_fields(self):
+        d = ContentItem(body="hi").to_dict()
+        d["unknown_field"] = "should be ignored"
+        item = ContentItem.from_dict(d)  # must not raise
+        assert item.body == "hi"
 
 
 # ---------------------------------------------------------------------------
-# ContentLayer.post tests
+# ContentStore
 # ---------------------------------------------------------------------------
 
-class TestContentLayerPost:
-    def test_post_returns_content_item(self):
-        layer = _make_layer()
-        item = layer.post("Hello, mesh!")
-        assert isinstance(item, ContentItem)
-        assert item.body == "Hello, mesh!"
+class TestContentStore:
+    def _fresh_store(self) -> ContentStore:
+        return ContentStore()  # in-memory only
 
-    def test_post_auto_generates_id(self):
-        layer = _make_layer()
-        a = layer.post("a")
-        b = layer.post("b")
-        assert a.content_id != b.content_id
+    def test_publish_returns_item(self):
+        store = self._fresh_store()
+        item = store.publish(body="Hello AIM")
+        assert item.id
+        assert item.body == "Hello AIM"
 
-    def test_post_stores_author_from_sig(self):
-        layer = _make_layer()
-        sig = CreatorSignature()
-        item = layer.post("signed", author_sig=sig)
-        assert item.author == sig.creator
-        assert item.signature_digest == sig.digest
+    def test_publish_validates_empty_body(self):
+        store = self._fresh_store()
+        with pytest.raises(ValueError, match="body must not be empty"):
+            store.publish(body="   ")
 
-    def test_post_without_sig_uses_origin_creator(self):
-        from aim.identity.signature import ORIGIN_CREATOR
-        layer = _make_layer()
-        item = layer.post("unsigned")
-        assert item.author == ORIGIN_CREATOR
+    def test_publish_validates_body_too_large(self):
+        store = self._fresh_store()
+        big = "x" * (65_536 + 1)
+        with pytest.raises(ValueError, match="body exceeds"):
+            store.publish(body=big)
 
-    def test_post_records_ledger_event(self):
-        ledger = LegacyLedger()
-        layer = ContentLayer(ledger=ledger)
-        layer.post("track me")
-        kinds = [e.event_kind for e in ledger.all_entries()]
-        assert "content_posted" in kinds
+    def test_read_returns_item(self):
+        store = self._fresh_store()
+        item = store.publish(body="Readable content")
+        result = store.read(item.id)
+        assert result is not None
+        assert result.id == item.id
+        assert result.body == "Readable content"
 
-    def test_count_increases_after_post(self):
-        layer = _make_layer()
-        assert layer.count() == 0
-        layer.post("one")
-        layer.post("two")
-        assert layer.count() == 2
+    def test_read_missing_returns_none(self):
+        store = self._fresh_store()
+        assert store.read("nonexistent-id") is None
 
-
-# ---------------------------------------------------------------------------
-# ContentLayer.get tests
-# ---------------------------------------------------------------------------
-
-class TestContentLayerGet:
-    def test_get_returns_posted_item(self):
-        layer = _make_layer()
-        item = layer.post("retrieve me")
-        fetched = layer.get(item.content_id)
-        assert fetched is not None
-        assert fetched.body == "retrieve me"
-
-    def test_get_missing_returns_none(self):
-        layer = _make_layer()
-        assert layer.get("does-not-exist") is None
-
-    def test_get_deleted_returns_none(self):
-        layer = _make_layer()
-        sig = CreatorSignature()
-        item = layer.post("to be deleted", author_sig=sig)
-        layer.delete(item.content_id, requester_sig=sig)
-        assert layer.get(item.content_id) is None
-
-
-# ---------------------------------------------------------------------------
-# ContentLayer.delete tests
-# ---------------------------------------------------------------------------
-
-class TestContentLayerDelete:
-    def test_delete_by_author(self):
-        layer = _make_layer()
-        sig = CreatorSignature()
-        item = layer.post("goodbye", author_sig=sig)
-        result = layer.delete(item.content_id, requester_sig=sig)
-        assert result is True
-        assert layer.count() == 0
-
-    def test_delete_by_different_creator_denied(self):
-        """A signature with a different creator name cannot delete someone else's content."""
-        import dataclasses
-        layer = _make_layer()
-        sig_a = CreatorSignature()
-        item = layer.post("mine", author_sig=sig_a)
-
-        # Create a signature that reports a different creator
-        sig_b = dataclasses.replace(sig_a, creator="SomeoneElse")
-        result = layer.delete(item.content_id, requester_sig=sig_b)
-        assert result is False
-        assert layer.get(item.content_id) is not None
-
-    def test_delete_missing_returns_false(self):
-        layer = _make_layer()
-        sig = CreatorSignature()
-        assert layer.delete("nonexistent", requester_sig=sig) is False
-
-    def test_delete_records_ledger_event(self):
-        ledger = LegacyLedger()
-        layer = ContentLayer(ledger=ledger)
-        sig = CreatorSignature()
-        item = layer.post("byebye", author_sig=sig)
-        layer.delete(item.content_id, requester_sig=sig)
-        kinds = [e.event_kind for e in ledger.all_entries()]
-        assert "content_deleted" in kinds
-
-
-# ---------------------------------------------------------------------------
-# ContentLayer.list tests
-# ---------------------------------------------------------------------------
-
-class TestContentLayerList:
-    def test_list_returns_all_items(self):
-        layer = _make_layer()
-        layer.post("alpha")
-        layer.post("beta")
-        layer.post("gamma")
-        items = layer.list()
+    def test_list_returns_all(self):
+        store = self._fresh_store()
+        store.publish(body="Post A")
+        store.publish(body="Post B")
+        store.publish(body="Post C")
+        items = store.list()
         assert len(items) == 3
 
-    def test_list_excludes_deleted(self):
-        layer = _make_layer()
-        sig = CreatorSignature()
-        kept = layer.post("keep", author_sig=sig)
-        gone = layer.post("gone", author_sig=sig)
-        layer.delete(gone.content_id, requester_sig=sig)
-        items = layer.list()
-        ids = [it.content_id for it in items]
-        assert kept.content_id in ids
-        assert gone.content_id not in ids
+    def test_list_newest_first(self):
+        store = self._fresh_store()
+        a = store.publish(body="First")
+        b = store.publish(body="Second")
+        items = store.list()
+        assert items[0].id == b.id
+        assert items[1].id == a.id
 
-    def test_list_respects_limit(self):
-        layer = _make_layer()
-        for i in range(10):
-            layer.post(f"item-{i}")
-        assert len(layer.list(limit=3)) == 3
-
-    def test_list_after_ts_filter(self):
-        layer = _make_layer()
-        before = time.time()
-        time.sleep(0.01)
-        layer.post("recent")
-        items = layer.list(after_ts=before)
+    def test_list_filter_by_author(self):
+        store = self._fresh_store()
+        store.publish(body="By Alice", author="alice")
+        store.publish(body="By Bob", author="bob")
+        items = store.list(author="alice")
         assert len(items) == 1
-        assert items[0].body == "recent"
+        assert items[0].author == "alice"
 
-    def test_list_content_type_filter(self):
-        layer = _make_layer()
-        layer.post("text item", content_type="text")
-        layer.post('{"key": "val"}', content_type="json")
-        json_items = layer.list(content_type="json")
-        assert all(it.content_type == "json" for it in json_items)
-        assert len(json_items) == 1
+    def test_list_filter_by_tag(self):
+        store = self._fresh_store()
+        store.publish(body="Tagged AIM", tags=["aim", "network"])
+        store.publish(body="Untagged")
+        items = store.list(tag="aim")
+        assert len(items) == 1
+        assert "aim" in items[0].tags
 
-    def test_list_ordered_by_created_at(self):
-        layer = _make_layer()
-        for i in range(5):
-            layer.post(f"item-{i}")
-            time.sleep(0.005)
-        items = layer.list()
-        for i in range(len(items) - 1):
-            assert items[i].created_at <= items[i + 1].created_at
+    def test_list_filter_by_visibility(self):
+        store = self._fresh_store()
+        store.publish(body="Public post", visibility="public")
+        store.publish(body="Private post", visibility="private")
+        public = store.list(visibility="public")
+        private = store.list(visibility="private")
+        assert len(public) == 1
+        assert len(private) == 1
+
+    def test_list_filter_by_content_type(self):
+        store = self._fresh_store()
+        store.publish(body="A note", content_type="note")
+        store.publish(body="A post", content_type="post")
+        notes = store.list(content_type="note")
+        assert len(notes) == 1
+        assert notes[0].content_type == "note"
+
+    def test_list_limit_and_offset(self):
+        store = self._fresh_store()
+        for i in range(10):
+            store.publish(body=f"Post {i}")
+        page1 = store.list(limit=3, offset=0)
+        page2 = store.list(limit=3, offset=3)
+        assert len(page1) == 3
+        assert len(page2) == 3
+        # No overlap
+        ids1 = {i.id for i in page1}
+        ids2 = {i.id for i in page2}
+        assert ids1.isdisjoint(ids2)
+
+    def test_count(self):
+        store = self._fresh_store()
+        assert store.count() == 0
+        store.publish(body="one")
+        store.publish(body="two")
+        assert store.count() == 2
+
+    def test_tags_truncated(self):
+        store = self._fresh_store()
+        item = store.publish(body="Tagged", tags=["a"] * 25)
+        assert len(item.tags) == 20  # capped at MAX_TAGS
+
+    def test_invalid_visibility_defaults_to_public(self):
+        store = self._fresh_store()
+        item = store.publish(body="Content", visibility="secret")
+        assert item.visibility == "public"
+
+    def test_author_sig_stored(self):
+        store = self._fresh_store()
+        item = store.publish(body="Signed", author_sig="test-digest-abc123")
+        assert item.signature == "test-digest-abc123"
+
+    def test_persist_and_reload(self, tmp_path):
+        path = str(tmp_path / "content.jsonl")
+        store1 = ContentStore(persist_path=path)
+        a = store1.publish(body="Persistent A")
+        b = store1.publish(body="Persistent B")
+
+        store2 = ContentStore(persist_path=path)
+        assert store2.count() == 2
+        assert store2.read(a.id) is not None
+        assert store2.read(b.id).body == "Persistent B"  # type: ignore[union-attr]
+
+
+# ---------------------------------------------------------------------------
+# ContentNode — AIM intent handling
+# ---------------------------------------------------------------------------
+
+class TestContentNode:
+    def _node(self) -> ContentNode:
+        return ContentNode(node_id="test-content-node", store=ContentStore())
+
+    @pytest.mark.asyncio
+    async def test_publish_intent(self):
+        node = self._node()
+        msg = AIMMessage(
+            intent=Intent.PUBLISH,
+            payload={"body": "Hello from AIM", "author": "alice", "tags": ["aim"]},
+            sender_id="client-1",
+        )
+        response = await node._handler.dispatch(msg)
+        assert response is not None
+        assert response.payload["result"]["status"] == "published"
+        item = response.payload["result"]["item"]
+        assert item["body"] == "Hello from AIM"
+        assert item["author"] == "alice"
+        assert "aim" in item["tags"]
+
+    @pytest.mark.asyncio
+    async def test_publish_invalid_body_returns_error(self):
+        node = self._node()
+        msg = AIMMessage(
+            intent=Intent.PUBLISH,
+            payload={"body": ""},
+            sender_id="client-1",
+        )
+        response = await node._handler.dispatch(msg)
+        assert response is not None
+        assert response.payload["status"] == Status.ERROR.value
+        assert "error" in response.payload["result"]
+
+    @pytest.mark.asyncio
+    async def test_read_intent(self):
+        node = self._node()
+        # First publish
+        item = node._content_store.publish(body="Readable via intent")
+        # Then read
+        msg = AIMMessage(
+            intent=Intent.READ,
+            payload={"id": item.id},
+            sender_id="client-1",
+        )
+        response = await node._handler.dispatch(msg)
+        assert response is not None
+        result = response.payload["result"]
+        assert result["item"]["id"] == item.id
+        assert result["item"]["body"] == "Readable via intent"
+
+    @pytest.mark.asyncio
+    async def test_read_missing_id(self):
+        node = self._node()
+        msg = AIMMessage(
+            intent=Intent.READ,
+            payload={},
+            sender_id="client-1",
+        )
+        response = await node._handler.dispatch(msg)
+        assert response is not None
+        assert response.payload["status"] == Status.ERROR.value
+
+    @pytest.mark.asyncio
+    async def test_read_nonexistent_id(self):
+        node = self._node()
+        msg = AIMMessage(
+            intent=Intent.READ,
+            payload={"id": "no-such-id"},
+            sender_id="client-1",
+        )
+        response = await node._handler.dispatch(msg)
+        assert response is not None
+        assert response.payload["status"] == Status.ERROR.value
+
+    @pytest.mark.asyncio
+    async def test_list_intent_all(self):
+        node = self._node()
+        node._content_store.publish(body="Item 1")
+        node._content_store.publish(body="Item 2")
+        msg = AIMMessage(
+            intent=Intent.LIST,
+            payload={},
+            sender_id="client-1",
+        )
+        response = await node._handler.dispatch(msg)
+        assert response is not None
+        result = response.payload["result"]
+        assert result["count"] == 2
+        assert len(result["items"]) == 2
+
+    @pytest.mark.asyncio
+    async def test_list_intent_with_filter(self):
+        node = self._node()
+        node._content_store.publish(body="Note", content_type="note")
+        node._content_store.publish(body="Post", content_type="post")
+        msg = AIMMessage(
+            intent=Intent.LIST,
+            payload={"content_type": "note"},
+            sender_id="client-1",
+        )
+        response = await node._handler.dispatch(msg)
+        assert response is not None
+        result = response.payload["result"]
+        assert result["count"] == 1
+        assert result["items"][0]["content_type"] == "note"
+
+    @pytest.mark.asyncio
+    async def test_publish_then_read_roundtrip(self):
+        node = self._node()
+        # Publish via intent
+        pub_msg = AIMMessage(
+            intent=Intent.PUBLISH,
+            payload={
+                "body": "Intent roundtrip",
+                "author": "tester",
+                "tags": ["roundtrip"],
+                "visibility": "public",
+            },
+            sender_id="client-1",
+        )
+        pub_response = await node._handler.dispatch(pub_msg)
+        assert pub_response is not None
+        content_id = pub_response.payload["result"]["item"]["id"]
+
+        # Read back via intent
+        read_msg = AIMMessage(
+            intent=Intent.READ,
+            payload={"id": content_id},
+            sender_id="client-1",
+        )
+        read_response = await node._handler.dispatch(read_msg)
+        assert read_response is not None
+        assert read_response.payload["result"]["item"]["body"] == "Intent roundtrip"
+
+    @pytest.mark.asyncio
+    async def test_inherited_heartbeat_still_works(self):
+        """ContentNode must not break inherited BaseNode handlers."""
+        node = self._node()
+        hb = AIMMessage.heartbeat(sender_id="client-1")
+        response = await node._handler.dispatch(hb)
+        assert response is not None
+        assert response.payload["result"]["alive"] is True
