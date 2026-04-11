@@ -33,14 +33,10 @@ class EventKind(str, Enum):
     RELAY_FORWARD  = "relay_forward"
     RELAY_HEARTBEAT = "relay_heartbeat"
     CUSTOM         = "custom"
-    # Mesh subsystem events
-    GATEWAY_CONNECTED    = "gateway_connected"
-    GATEWAY_DISCONNECTED = "gateway_disconnected"
-    RELAY_PEER_CONNECTED = "relay_peer_connected"
-    RELAY_MSG_FORWARDED  = "relay_message_forwarded"
-    CONTENT_POSTED       = "content_posted"
-    CONTENT_DELETED      = "content_deleted"
-    MESH_NODE_JOINED     = "mesh_node_joined"
+    # Gateway events
+    GATEWAY_NODE_REGISTERED   = "gateway_node_registered"
+    GATEWAY_NODE_DISCONNECTED = "gateway_node_disconnected"
+    GATEWAY_MESSAGE_FORWARDED = "gateway_message_forwarded"
 
 
 @dataclass

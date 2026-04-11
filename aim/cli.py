@@ -213,6 +213,74 @@ async def _cmd_status(args: argparse.Namespace) -> None:
         print("Node did not respond.", file=sys.stderr)
 
 
+async def _cmd_gateway_start(args: argparse.Namespace) -> None:
+    from aim.gateway.node import GatewayNode
+    from aim.identity.ledger import default_ledger
+
+    ledger = default_ledger()
+    gw = GatewayNode(host=args.host, port=args.port, ledger=ledger)
+
+    print(f"\n{'='*60}")
+    print(f"  AIM — Gateway Node  v{__version__}")
+    print(f"  Origin creator : {__origin__}")
+    print(f"  Gateway ID     : {gw.node_id}")
+    print(f"  Address        : {args.host}:{args.port}")
+    print(f"{'='*60}\n")
+
+    try:
+        await gw.start()
+    except KeyboardInterrupt:
+        await gw.stop()
+
+
+async def _cmd_node_connect_gateway(args: argparse.Namespace) -> None:
+    from aim.gateway.client import GatewayClient
+
+    sig = CreatorSignature()
+    node = AgentNode(
+        host="127.0.0.1",
+        port=0,  # no inbound port needed
+        capabilities=args.capabilities.split(",") if args.capabilities else ["query", "task"],
+    )
+
+    ledger = default_ledger()
+    ledger.record(
+        EventKind.NODE_CREATED,
+        node.node_id,
+        payload={"via": "gateway", "gateway": f"{args.host}:{args.port}"},
+        signature=sig,
+    )
+
+    client = GatewayClient(node, gateway_host=args.host, gateway_port=args.port)
+
+    print(f"\n{'='*60}")
+    print(f"  AIM — Node connecting to Gateway  v{__version__}")
+    print(f"  Origin creator : {__origin__}")
+    print(f"  Node ID        : {node.node_id}")
+    print(f"  Gateway        : {args.host}:{args.port}")
+    print(f"  Signature      : {sig}")
+    print(f"{'='*60}\n")
+
+    ok = await client.connect()
+    if not ok:
+        print(
+            f"Failed to connect to gateway at {args.host}:{args.port}",
+            file=sys.stderr,
+        )
+        return
+
+    print(f"Node {node.node_id[:8]} registered with gateway. Press Ctrl-C to stop.\n")
+    try:
+        # Keep running until interrupted; the read loop is active in the background
+        if client._reader_task is not None:
+            await client._reader_task
+    except KeyboardInterrupt:
+        pass
+    finally:
+        await client.disconnect()
+        ledger.record(EventKind.NODE_STOPPED, node.node_id)
+
+
 def _cmd_vcloud_list(args: argparse.Namespace) -> None:
     from aim.vcloud.manager import VCloudManager
     mgr = VCloudManager.default()
@@ -564,39 +632,30 @@ def _build_parser() -> argparse.ArgumentParser:
 
     dns_sub.add_parser("records", help="List all registered ANS records")
 
-    # --- mesh subcommand ---
-    mesh_p = sub.add_parser("mesh", help="AIM mesh operations (start stack, join network)")
-    mesh_sub = mesh_p.add_subparsers(dest="mesh_command")
+    # --- gateway subcommand ---
+    gw_p = sub.add_parser("gateway", help="AIM gateway node commands")
+    gw_sub = gw_p.add_subparsers(dest="gateway_command")
 
-    mesh_up_p = mesh_sub.add_parser("up", help="Start a full local AIM mesh stack")
-    mesh_up_p.add_argument("--host",         default="127.0.0.1",
-                           help="Bind address (default: 127.0.0.1)")
-    mesh_up_p.add_argument("--node-port",    type=int, default=7700, dest="node_port",
-                           help="Compute node port (default: 7700)")
-    mesh_up_p.add_argument("--with-gateway", action="store_true", dest="with_gateway",
-                           help="Also start a Gateway Node")
-    mesh_up_p.add_argument("--gateway-port", type=int, default=7600, dest="gateway_port",
-                           help="Gateway port (default: 7600)")
-    mesh_up_p.add_argument("--with-relay",   action="store_true", dest="with_relay",
-                           help="Also start a Relay Node")
-    mesh_up_p.add_argument("--relay-port",   type=int, default=7500, dest="relay_port",
-                           help="Relay port (default: 7500)")
+    gw_start_p = gw_sub.add_parser("start", help="Start a public AIM gateway node")
+    gw_start_p.add_argument(
+        "--host", default="0.0.0.0",
+        help="Interface to listen on (default: 0.0.0.0 — all interfaces)",
+    )
+    gw_start_p.add_argument(
+        "--port", type=int, default=7900,
+        help="TCP port for the gateway (default: 7900)",
+    )
 
-    mesh_join_p = mesh_sub.add_parser("join", help="Join an existing public AIM mesh")
-    mesh_join_p.add_argument("--gateway", required=True,
-                             help="Public gateway address, e.g. mesh.aim.example.org or host:port")
-    mesh_join_p.add_argument("--host",      default="127.0.0.1",
-                             help="Local bind address (default: 127.0.0.1)")
-    mesh_join_p.add_argument("--node-port", type=int, default=7700, dest="node_port",
-                             help="Local compute node port (default: 7700)")
-
-    mesh_status_p = mesh_sub.add_parser("status", help="Check health of a gateway or relay")
-    mesh_status_p.add_argument("--host", default="127.0.0.1")
-    mesh_status_p.add_argument("--port", type=int, default=7600)
-
-    mesh_peers_p = mesh_sub.add_parser("peers", help="List relay peers known to a relay node")
-    mesh_peers_p.add_argument("--host", default="127.0.0.1")
-    mesh_peers_p.add_argument("--port", type=int, default=7500)
+    # --- node connect-gateway subcommand ---
+    cg_p = node_sub.add_parser(
+        "connect-gateway", help="Connect this node to a public AIM gateway"
+    )
+    cg_p.add_argument("--host", required=True, help="Gateway hostname or IP")
+    cg_p.add_argument("--port", type=int, default=7900, help="Gateway port (default: 7900)")
+    cg_p.add_argument(
+        "--capabilities", default="",
+        help="Comma-separated capability tags for this node",
+    )
 
     return parser
 
@@ -657,20 +716,16 @@ def main(argv: list[str] | None = None) -> None:
             sub = _get_subparser(parser, "dns")
             if sub:
                 sub.print_help()
-    elif args.command == "mesh":
-        mesh_cmd = getattr(args, "mesh_command", None)
-        if mesh_cmd == "up":
-            asyncio.run(_cmd_mesh_up(args))
-        elif mesh_cmd == "join":
-            asyncio.run(_cmd_mesh_join(args))
-        elif mesh_cmd == "status":
-            asyncio.run(_cmd_mesh_status(args))
-        elif mesh_cmd == "peers":
-            asyncio.run(_cmd_mesh_peers(args))
+    elif args.command == "gateway":
+        gw_cmd = getattr(args, "gateway_command", None)
+        if gw_cmd == "start":
+            asyncio.run(_cmd_gateway_start(args))
         else:
-            sub = _get_subparser(parser, "mesh")
+            sub = _get_subparser(parser, "gateway")
             if sub:
                 sub.print_help()
+    elif args.command == "node" and getattr(args, "node_command", None) == "connect-gateway":
+        asyncio.run(_cmd_node_connect_gateway(args))
     else:
         parser.print_help()
 
