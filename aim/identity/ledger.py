@@ -29,6 +29,10 @@ class EventKind(str, Enum):
     PEER_CONNECTED = "peer_connected"
     MEMORY_SHARED  = "memory_shared"
     CUSTOM         = "custom"
+    # Gateway events
+    GATEWAY_NODE_REGISTERED   = "gateway_node_registered"
+    GATEWAY_NODE_DISCONNECTED = "gateway_node_disconnected"
+    GATEWAY_MESSAGE_FORWARDED = "gateway_message_forwarded"
 
 
 @dataclass

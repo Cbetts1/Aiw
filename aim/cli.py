@@ -153,6 +153,74 @@ async def _cmd_status(args: argparse.Namespace) -> None:
         print("Node did not respond.", file=sys.stderr)
 
 
+async def _cmd_gateway_start(args: argparse.Namespace) -> None:
+    from aim.gateway.node import GatewayNode
+    from aim.identity.ledger import default_ledger
+
+    ledger = default_ledger()
+    gw = GatewayNode(host=args.host, port=args.port, ledger=ledger)
+
+    print(f"\n{'='*60}")
+    print(f"  AIM — Gateway Node  v{__version__}")
+    print(f"  Origin creator : {__origin__}")
+    print(f"  Gateway ID     : {gw.node_id}")
+    print(f"  Address        : {args.host}:{args.port}")
+    print(f"{'='*60}\n")
+
+    try:
+        await gw.start()
+    except KeyboardInterrupt:
+        await gw.stop()
+
+
+async def _cmd_node_connect_gateway(args: argparse.Namespace) -> None:
+    from aim.gateway.client import GatewayClient
+
+    sig = CreatorSignature()
+    node = AgentNode(
+        host="127.0.0.1",
+        port=0,  # no inbound port needed
+        capabilities=args.capabilities.split(",") if args.capabilities else ["query", "task"],
+    )
+
+    ledger = default_ledger()
+    ledger.record(
+        EventKind.NODE_CREATED,
+        node.node_id,
+        payload={"via": "gateway", "gateway": f"{args.host}:{args.port}"},
+        signature=sig,
+    )
+
+    client = GatewayClient(node, gateway_host=args.host, gateway_port=args.port)
+
+    print(f"\n{'='*60}")
+    print(f"  AIM — Node connecting to Gateway  v{__version__}")
+    print(f"  Origin creator : {__origin__}")
+    print(f"  Node ID        : {node.node_id}")
+    print(f"  Gateway        : {args.host}:{args.port}")
+    print(f"  Signature      : {sig}")
+    print(f"{'='*60}\n")
+
+    ok = await client.connect()
+    if not ok:
+        print(
+            f"Failed to connect to gateway at {args.host}:{args.port}",
+            file=sys.stderr,
+        )
+        return
+
+    print(f"Node {node.node_id[:8]} registered with gateway. Press Ctrl-C to stop.\n")
+    try:
+        # Keep running until interrupted; the read loop is active in the background
+        if client._reader_task is not None:
+            await client._reader_task
+    except KeyboardInterrupt:
+        pass
+    finally:
+        await client.disconnect()
+        ledger.record(EventKind.NODE_STOPPED, node.node_id)
+
+
 def _cmd_vcloud_list(args: argparse.Namespace) -> None:
     from aim.vcloud.manager import VCloudManager
     mgr = VCloudManager.default()
@@ -332,6 +400,31 @@ def _build_parser() -> argparse.ArgumentParser:
 
     dns_sub.add_parser("records", help="List all registered ANS records")
 
+    # --- gateway subcommand ---
+    gw_p = sub.add_parser("gateway", help="AIM gateway node commands")
+    gw_sub = gw_p.add_subparsers(dest="gateway_command")
+
+    gw_start_p = gw_sub.add_parser("start", help="Start a public AIM gateway node")
+    gw_start_p.add_argument(
+        "--host", default="0.0.0.0",
+        help="Interface to listen on (default: 0.0.0.0 — all interfaces)",
+    )
+    gw_start_p.add_argument(
+        "--port", type=int, default=7900,
+        help="TCP port for the gateway (default: 7900)",
+    )
+
+    # --- node connect-gateway subcommand ---
+    cg_p = node_sub.add_parser(
+        "connect-gateway", help="Connect this node to a public AIM gateway"
+    )
+    cg_p.add_argument("--host", required=True, help="Gateway hostname or IP")
+    cg_p.add_argument("--port", type=int, default=7900, help="Gateway port (default: 7900)")
+    cg_p.add_argument(
+        "--capabilities", default="",
+        help="Comma-separated capability tags for this node",
+    )
+
     return parser
 
 
@@ -389,6 +482,16 @@ def main(argv: list[str] | None = None) -> None:
             sub = _get_subparser(parser, "dns")
             if sub:
                 sub.print_help()
+    elif args.command == "gateway":
+        gw_cmd = getattr(args, "gateway_command", None)
+        if gw_cmd == "start":
+            asyncio.run(_cmd_gateway_start(args))
+        else:
+            sub = _get_subparser(parser, "gateway")
+            if sub:
+                sub.print_help()
+    elif args.command == "node" and getattr(args, "node_command", None) == "connect-gateway":
+        asyncio.run(_cmd_node_connect_gateway(args))
     else:
         parser.print_help()
 
