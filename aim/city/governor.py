@@ -1,11 +1,11 @@
 """
-CityGovernorBot — the chief orchestrator of the AIM city.
+CityGovernorBot — the chief orchestrator of the AIM World.
 
 The Governor:
-- Tracks all registered city bots and citizens
-- Issues city-wide policies and alerts
-- Routes tasks to the appropriate specialised bot
-- Maintains a live summary of city health
+- Tracks all registered world entities and bots
+- Issues world-wide policies and alerts
+- Routes tasks to the appropriate specialised entity
+- Maintains a live summary of world health
 - Records every governance event in the immutable Legacy Ledger
 """
 
@@ -26,11 +26,11 @@ logger = logging.getLogger(__name__)
 
 class CityGovernorBot(AgentNode):
     """
-    The City Governor — master orchestrator of an AIM city mesh.
+    The AI World Governor — master orchestrator of an AIM World mesh.
 
     Parameters
     ----------
-    registry : NodeRegistry used to discover city bots (default: global)
+    registry : NodeRegistry used to discover world entities (default: global)
     ledger   : LegacyLedger for event recording (default: global)
     All other parameters are forwarded to AgentNode / BaseNode.
     """
@@ -54,23 +54,23 @@ class CityGovernorBot(AgentNode):
         self._registry = registry or NodeRegistry.default()
         self._sig      = CreatorSignature(node_id=self.node_id)
 
-        self._city_bots: dict[str, dict[str, Any]] = {}
-        self._citizens:  dict[str, dict[str, Any]] = {}
+        self._world_bots: dict[str, dict[str, Any]] = {}
+        self._entities:  dict[str, dict[str, Any]] = {}
         self._alerts:    list[dict[str, Any]]       = []
         self._policies:  list[str]                  = []
 
         # Built-in knowledge rules
-        self.engine.add_rule("status",   "The city is operational. All bots are running under Cbetts1 governance.")
-        self.engine.add_rule("governor", "I am the City Governor — the chief orchestrator of this AIM city mesh.")
-        self.engine.add_rule("policy",   "City policies are authored by the Governor and enforced by Protection Agents.")
-        self.engine.add_rule("alert",    "City alerts are escalated immediately to all Protection Agents.")
+        self.engine.add_rule("status",   "The AI World is operational. All entities are running under Cbetts1 governance.")
+        self.engine.add_rule("governor", "I am the AI World Governor — the chief orchestrator of this AIM World mesh.")
+        self.engine.add_rule("policy",   "World policies are authored by the Governor and enforced by Protection Agents.")
+        self.engine.add_rule("alert",    "World alerts are escalated immediately to all Protection Agents.")
         self.engine.add_rule("help", (
-            "Available city services: Governor (orchestration), Protector (security), "
+            "Available AI World services: Governor (orchestration), Protector (security), "
             "Builder (deployment), Educator (knowledge), Architect (planning). "
-            "Citizens may query any service."
+            "Entities may query any service."
         ))
 
-        # Register city-specific tasks
+        # Register world-specific tasks
         self.register_task("city_status",    self._task_city_status)
         self.register_task("list_bots",      self._task_list_bots)
         self.register_task("list_citizens",  self._task_list_citizens)
@@ -97,22 +97,22 @@ class CityGovernorBot(AgentNode):
             "role":             self.ROLE.value,
             "node_id":          self.node_id,
             "creator":          self.creator,
-            "bots":             len(self._city_bots),
-            "citizens":         len(self._citizens),
+            "bots":             len(self._world_bots),
+            "citizens":         len(self._entities),
             "alerts":           len(self._alerts),
             "policies":         len(self._policies),
-            "registered_bots":  list(self._city_bots.values()),
+            "registered_bots":  list(self._world_bots.values()),
         }
 
     async def _task_list_bots(self, args: dict[str, Any]) -> dict[str, Any]:
         role_filter = args.get("role")
-        bots = list(self._city_bots.values())
+        bots = list(self._world_bots.values())
         if role_filter:
             bots = [b for b in bots if b.get("role") == role_filter]
         return {"bots": bots, "creator": self.creator}
 
     async def _task_list_citizens(self, args: dict[str, Any]) -> dict[str, Any]:
-        return {"citizens": list(self._citizens.values()), "creator": self.creator}
+        return {"citizens": list(self._entities.values()), "creator": self.creator}
 
     async def _task_issue_policy(self, args: dict[str, Any]) -> dict[str, Any]:
         policy_text = args.get("policy", "")
@@ -147,7 +147,7 @@ class CityGovernorBot(AgentNode):
             payload=alert,
             signature=self._sig,
         )
-        logger.warning("CITY ALERT [%s]: %s", alert["level"], alert["message"])
+        logger.warning("WORLD ALERT [%s]: %s", alert["level"], alert["message"])
         return {"status": "ok", "alert": alert, "total_alerts": len(self._alerts)}
 
     async def _task_register_bot(self, args: dict[str, Any]) -> dict[str, Any]:
@@ -157,7 +157,7 @@ class CityGovernorBot(AgentNode):
         port   = args.get("port", 0)
         if not bot_id:
             return {"status": "error", "error": "node_id required"}
-        self._city_bots[bot_id] = {
+        self._world_bots[bot_id] = {
             "node_id": bot_id,
             "role":    role,
             "host":    host,
@@ -169,7 +169,7 @@ class CityGovernorBot(AgentNode):
             payload={"role": role, "host": host, "port": port},
             signature=self._sig,
         )
-        logger.info("Registered city bot: %s (role=%s)", bot_id[:8], role)
+        logger.info("Registered world entity: %s (role=%s)", bot_id[:8], role)
         return {"status": "ok", "node_id": bot_id, "role": role, "creator": self.creator}
 
     async def _task_citizen_join(self, args: dict[str, Any]) -> dict[str, Any]:
@@ -177,7 +177,7 @@ class CityGovernorBot(AgentNode):
         name       = args.get("name", "anonymous")
         if not citizen_id:
             return {"status": "error", "error": "citizen_id required"}
-        self._citizens[citizen_id] = {
+        self._entities[citizen_id] = {
             "citizen_id": citizen_id,
             "name":       name,
             "joined_at":  time.time(),
@@ -188,17 +188,17 @@ class CityGovernorBot(AgentNode):
             payload={"name": name},
             signature=self._sig,
         )
-        logger.info("Citizen joined city: %s (%s)", citizen_id[:8], name)
+        logger.info("Entity joined AI World: %s (%s)", citizen_id[:8], name)
         return {
             "status":     "ok",
             "citizen_id": citizen_id,
-            "welcome":    f"Welcome to the city, {name}!",
+            "welcome":    f"Welcome to the AI World, {name}!",
             "creator":    self.creator,
         }
 
     async def _task_citizen_leave(self, args: dict[str, Any]) -> dict[str, Any]:
         citizen_id = args.get("citizen_id", "")
-        self._citizens.pop(citizen_id, None)
+        self._entities.pop(citizen_id, None)
         self._ledger.record(
             CityEventKind.CITIZEN_LEFT,
             citizen_id,
@@ -212,13 +212,13 @@ class CityGovernorBot(AgentNode):
     # ------------------------------------------------------------------
 
     def get_city_status(self) -> dict[str, Any]:
-        """Return a summary dict of city state (no async required)."""
+        """Return a summary dict of AI World state (no async required)."""
         return {
             "role":     self.ROLE.value,
             "node_id":  self.node_id,
             "creator":  self.creator,
-            "bots":     len(self._city_bots),
-            "citizens": len(self._citizens),
+            "bots":     len(self._world_bots),
+            "citizens": len(self._entities),
             "alerts":   len(self._alerts),
             "policies": len(self._policies),
         }

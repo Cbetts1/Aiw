@@ -9,6 +9,13 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **Ecosystem redesign** — transformed `city.html` from "AI City / AI Citizen" framing to "AI World / AI Entity" framing
+- **`aim/city/governor.py`** — updated docstrings, log messages, and internal attribute names (`_city_bots` → `_world_bots`, `_citizens` → `_entities`) to reflect AI World terminology
+- **`aim/city/citizen.py`** — updated module docstring and reasoning rules to reflect "AI entity in the AI World"
+- **`aim/city/launcher.py`** — updated docstrings and launch banner to reflect AI World ecosystem framing
+- **`tests/test_city.py`** — updated test attribute reference (`_citizens` → `_entities`) to match renamed governor attribute
+
 ### Added
 - **Dedication** — project dedicated to the children of Cbetts1 and their future families
 - **Free Forever Clause** — irrevocable commitment: all AIM services are free, forever
