@@ -1,13 +1,13 @@
-"""Tests for the AIM Transport Layer (aim/transport/tls.py)."""
+"""Tests for the Meshara Transport Layer (meshara/transport/tls.py)."""
 
 import ssl
 import pytest
 
-from aim.transport.tls import (
+from meshara.transport.tls import (
     create_client_ssl_context,
     create_server_ssl_context,
-    open_aim_connection,
-    start_aim_server,
+    open_meshara_connection,
+    start_meshara_server,
 )
 
 
@@ -64,7 +64,7 @@ class TestCreateServerSSLContext:
 
 
 # ---------------------------------------------------------------------------
-# open_aim_connection — connection refused path
+# open_meshara_connection — connection refused path
 # ---------------------------------------------------------------------------
 
 class TestOpenAimConnection:
@@ -72,7 +72,7 @@ class TestOpenAimConnection:
     async def test_connection_refused_raises(self):
         """Connecting to a port nothing listens on raises ConnectionRefusedError."""
         with pytest.raises((ConnectionRefusedError, OSError)):
-            await open_aim_connection("127.0.0.1", 19999, ssl_context=None, timeout=2.0)
+            await open_meshara_connection("127.0.0.1", 19999, ssl_context=None, timeout=2.0)
 
     @pytest.mark.asyncio
     async def test_timeout_raises(self):
@@ -80,11 +80,11 @@ class TestOpenAimConnection:
         import asyncio
         # 192.0.2.x is TEST-NET-1 — reserved, nothing routes there
         with pytest.raises((asyncio.TimeoutError, OSError, ConnectionRefusedError)):
-            await open_aim_connection("192.0.2.1", 7700, ssl_context=None, timeout=0.1)
+            await open_meshara_connection("192.0.2.1", 7700, ssl_context=None, timeout=0.1)
 
 
 # ---------------------------------------------------------------------------
-# start_aim_server — basic lifecycle
+# start_meshara_server — basic lifecycle
 # ---------------------------------------------------------------------------
 
 class TestStartAimServer:
@@ -95,7 +95,7 @@ class TestStartAimServer:
         async def noop(reader, writer):
             writer.close()
 
-        server = await start_aim_server(noop, host="127.0.0.1", port=0, ssl_context=None)
+        server = await start_meshara_server(noop, host="127.0.0.1", port=0, ssl_context=None)
         try:
             assert server is not None
             addr = server.sockets[0].getsockname()
@@ -119,7 +119,7 @@ class TestStartAimServer:
             except OSError:
                 pass
 
-        server = await start_aim_server(handler, host="127.0.0.1", port=0)
+        server = await start_meshara_server(handler, host="127.0.0.1", port=0)
         addr = server.sockets[0].getsockname()
         try:
             # Connect a plain TCP client

@@ -1,12 +1,12 @@
-"""Tests for the AIM Virtual Node Layer."""
+"""Tests for the Meshara Virtual Node Layer."""
 
 import asyncio
 import pytest
 
-from aim.node.base import BaseNode
-from aim.node.agent import AgentNode, ReasoningEngine
-from aim.node.registry import NodeRegistry, NodeRecord
-from aim.protocol.message import AIMMessage, Intent
+from meshara.node.base import BaseNode
+from meshara.node.agent import AgentNode, ReasoningEngine
+from meshara.node.registry import NodeRegistry, NodeRecord
+from meshara.protocol.message import MesharaMessage, Intent
 
 
 # ---------------------------------------------------------------------------
@@ -30,9 +30,9 @@ class TestReasoningEngine:
     @pytest.mark.asyncio
     async def test_case_insensitive_match(self):
         engine = ReasoningEngine()
-        engine.add_rule("aim", "AIM is the mesh.")
-        result = await engine.reason("What is AIM?", {})
-        assert result == "AIM is the mesh."
+        engine.add_rule("meshara", "Meshara is the mesh.")
+        result = await engine.reason("What is Meshara?", {})
+        assert result == "Meshara is the mesh."
 
 
 # ---------------------------------------------------------------------------
@@ -82,7 +82,7 @@ class TestBaseNodeHandlers:
     @pytest.mark.asyncio
     async def test_heartbeat_handler(self):
         node = BaseNode(node_id="test-node", port=9900)
-        hb = AIMMessage.heartbeat(sender_id="client")
+        hb = MesharaMessage.heartbeat(sender_id="client")
         # Access the handler directly (bypassing networking)
         response = await node._handler.dispatch(hb)
         assert response is not None
@@ -92,7 +92,7 @@ class TestBaseNodeHandlers:
     @pytest.mark.asyncio
     async def test_query_handler(self):
         node = BaseNode(node_id="qnode", port=9901)
-        msg = AIMMessage.query("hello?", sender_id="cli")
+        msg = MesharaMessage.query("hello?", sender_id="cli")
         response = await node._handler.dispatch(msg)
         assert response is not None
         result = response.payload["result"]
@@ -102,7 +102,7 @@ class TestBaseNodeHandlers:
     @pytest.mark.asyncio
     async def test_task_handler(self):
         node = BaseNode(node_id="tnode", port=9902)
-        msg = AIMMessage.task("run_analysis", {"param": 1}, sender_id="cli")
+        msg = MesharaMessage.task("run_analysis", {"param": 1}, sender_id="cli")
         response = await node._handler.dispatch(msg)
         assert response is not None
         result = response.payload["result"]
@@ -111,7 +111,7 @@ class TestBaseNodeHandlers:
     @pytest.mark.asyncio
     async def test_announce_registers_peer(self):
         node = BaseNode(node_id="anode", port=9903)
-        ann = AIMMessage.announce(["query"], sender_id="peer-001")
+        ann = MesharaMessage.announce(["query"], sender_id="peer-001")
         ann.payload["addr"] = ["127.0.0.1", 8888]
         await node._handler.dispatch(ann)
         assert "peer-001" in node._peers
@@ -132,7 +132,7 @@ class TestAgentNode:
     @pytest.mark.asyncio
     async def test_memory_set_handler(self):
         node = AgentNode(node_id="mem-node", port=9911)
-        msg = AIMMessage(
+        msg = MesharaMessage(
             intent=Intent.MEMORY_SET,
             payload={"key": "x", "value": 42},
             sender_id="cli",
@@ -145,7 +145,7 @@ class TestAgentNode:
     @pytest.mark.asyncio
     async def test_memory_get_missing_key_returns_none(self):
         node = AgentNode(node_id="mem-node3", port=9916)
-        msg = AIMMessage(
+        msg = MesharaMessage(
             intent=Intent.MEMORY_GET,
             payload={"key": "does_not_exist"},
             sender_id="cli",
@@ -157,7 +157,7 @@ class TestAgentNode:
     @pytest.mark.asyncio
     async def test_memory_get_handler(self):
         node = AgentNode(node_id="mem-node2", port=9912, memory={"greeting": "hello"})
-        msg = AIMMessage(
+        msg = MesharaMessage(
             intent=Intent.MEMORY_GET,
             payload={"key": "greeting"},
             sender_id="cli",
@@ -173,7 +173,7 @@ class TestAgentNode:
             return args["n"] * 2
 
         node.register_task("double", double)
-        msg = AIMMessage.task("double", {"n": 21}, sender_id="cli")
+        msg = MesharaMessage.task("double", {"n": 21}, sender_id="cli")
         response = await node._handler.dispatch(msg)
         assert response.payload["result"]["result"] == 42
         assert response.payload["result"]["status"] == "ok"
@@ -181,14 +181,14 @@ class TestAgentNode:
     @pytest.mark.asyncio
     async def test_unknown_task_returns_error(self):
         node = AgentNode(node_id="u-node", port=9914)
-        msg = AIMMessage.task("nonexistent_task", {})
+        msg = MesharaMessage.task("nonexistent_task", {})
         response = await node._handler.dispatch(msg)
         assert response.payload["result"]["status"] == "unknown_task"
 
     @pytest.mark.asyncio
     async def test_reasoning_engine_integration(self):
         node = AgentNode(node_id="r-node", port=9915)
-        node.engine.add_rule("aim", "AIM is the Artificial Intelligence Mesh.")
-        msg = AIMMessage.query("Tell me about aim", sender_id="cli")
+        node.engine.add_rule("meshara", "Meshara is the The Artificial Intelligence Mesh.")
+        msg = MesharaMessage.query("Tell me about meshara", sender_id="cli")
         response = await node._handler.dispatch(msg)
-        assert "Artificial Intelligence Mesh" in response.payload["result"]["answer"]
+        assert "The Artificial Intelligence Mesh" in response.payload["result"]["answer"]
