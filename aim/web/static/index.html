@@ -459,6 +459,7 @@
     <li><a href="/project">Project</a></li>
     <li><a href="/resources">Resources</a></li>
     <li><a href="/apps">Apps</a></li>
+    <li><a href="/feed">Feed</a></li>
     <li><a href="#query-section">Try It</a></li>
     <li><a href="/directory">Directory</a></li>
     <li><a href="/about">About</a></li>
@@ -758,39 +759,47 @@
 <div id="query-section">
 <section>
   <div class="section-tag">Live Demo</div>
-  <h2>Talk to an AIM Node</h2>
-  <p>Connect your browser directly to a running AIM node and send it a query — free, right now.</p>
+  <h2>Ask the AIM Mesh</h2>
+  <p>Type a question below and hit Send — no account, no port setup required.</p>
 
-  <!-- Node connection -->
+  <!-- Simple query input -->
   <div class="card">
-    <h3>Node Connection
-      <span class="status-badge" id="status-badge">
+    <h3>Your Query
+      <span class="status-badge" id="status-badge" style="float:right;">
         <span class="dot"></span><span id="status-text">unknown</span>
       </span>
     </h3>
-    <div class="settings-row">
-      <label>
-        Host
-        <input type="text" id="node-host" value="127.0.0.1" placeholder="127.0.0.1" />
-      </label>
-      <label>
-        Port
-        <input type="number" id="node-port" value="7700" min="1" max="65535" />
-      </label>
-      <div>
-        <button class="btn btn-secondary" onclick="ping()" style="padding:8px 18px;font-size:.88rem;">Ping</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Query input -->
-  <div class="card">
-    <h3>Your Query</h3>
     <div class="query-row">
       <input type="text" id="query-input" placeholder="Ask the AIM mesh anything…"
              autocomplete="off" onkeydown="if(event.key==='Enter') sendQuery()" />
       <button class="btn btn-primary" id="btn-send" onclick="sendQuery()"
               style="padding:8px 22px;font-size:.95rem;">Send</button>
+    </div>
+
+    <!-- Advanced settings (collapsed by default) -->
+    <div style="margin-top:12px;">
+      <button class="btn btn-secondary" onclick="toggleAdvanced()"
+              style="font-size:.78rem;padding:4px 12px;border-radius:4px;" id="btn-advanced">
+        ⚙ Advanced settings
+      </button>
+      <div id="advanced-panel" style="display:none;margin-top:12px;">
+        <div class="settings-row">
+          <label>
+            Node Host
+            <input type="text" id="node-host" value="127.0.0.1" placeholder="127.0.0.1" />
+          </label>
+          <label>
+            Node Port
+            <input type="number" id="node-port" value="7700" min="1" max="65535" />
+          </label>
+          <div>
+            <button class="btn btn-secondary" onclick="ping()" style="padding:8px 18px;font-size:.88rem;">Ping</button>
+          </div>
+        </div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-top:8px;">
+          Only needed if you run your own AIM node. Default connects to a local node on port 7700.
+        </p>
+      </div>
     </div>
   </div>
 
@@ -832,6 +841,7 @@
     <a href="/project">Project</a>
     <a href="/resources">Resources</a>
     <a href="/apps">Apps</a>
+    <a href="/feed">Feed</a>
     <a href="#query-section">Try It</a>
     <a href="/directory">Directory</a>
     <a href="/about">About</a>
@@ -851,6 +861,14 @@
       $('f-origin').textContent = d.origin || '?';
     })
     .catch(() => {});
+
+  function toggleAdvanced() {
+    const panel = $('advanced-panel');
+    const btn   = $('btn-advanced');
+    const open  = panel.style.display === 'none';
+    panel.style.display = open ? 'block' : 'none';
+    btn.textContent = open ? '⚙ Hide advanced settings' : '⚙ Advanced settings';
+  }
 
   function nodeParams() {
     return `host=${encodeURIComponent($('node-host').value)}&port=${encodeURIComponent($('node-port').value)}`;

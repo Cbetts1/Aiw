@@ -32,14 +32,17 @@ from aim.ans.registry import ANSRegistry
 
 logger = logging.getLogger(__name__)
 
-_STATIC_DIR = Path(__file__).parent / "static"
-_DATA_DIR   = Path(__file__).parent / "data"
-_DIR_FILE   = _DATA_DIR / "directory.json"
+_STATIC_DIR  = Path(__file__).parent / "static"
+_DATA_DIR    = Path(__file__).parent / "data"
+_DIR_FILE    = _DATA_DIR / "directory.json"
+_POSTS_FILE  = _DATA_DIR / "posts.json"
 
-# Ensure data directory and file exist at import time
+# Ensure data directory and files exist at import time
 _DATA_DIR.mkdir(parents=True, exist_ok=True)
 if not _DIR_FILE.exists():
     _DIR_FILE.write_text("[]")
+if not _POSTS_FILE.exists():
+    _POSTS_FILE.write_text("[]")
 
 # ---------------------------------------------------------------------------
 # Tiny HTTP helpers
@@ -194,6 +197,75 @@ def _handle_directory_post(body: bytes) -> tuple[int, str]:
 
 
 # ---------------------------------------------------------------------------
+# Posts (community feed)
+# ---------------------------------------------------------------------------
+
+_MAX_POSTS = 500  # cap to prevent unbounded growth
+
+
+def _load_posts() -> list[dict]:
+    """Load community posts from disk."""
+    try:
+        data = json.loads(_POSTS_FILE.read_text(encoding="utf-8"))
+        if isinstance(data, list):
+            return data
+    except (OSError, json.JSONDecodeError):
+        pass
+    return []
+
+
+def _save_posts(posts: list[dict]) -> None:
+    """Persist posts to disk."""
+    _POSTS_FILE.write_text(json.dumps(posts, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def _handle_posts_get(qs: dict[str, str]) -> tuple[int, str]:
+    """Return posts as JSON (newest first, optionally limited)."""
+    posts = _load_posts()
+    posts_newest_first = list(reversed(posts))
+    try:
+        limit = int(qs.get("limit", "50"))
+        limit = max(1, min(limit, _MAX_POSTS))
+    except ValueError:
+        limit = 50
+    return 200, json.dumps({"count": len(posts), "posts": posts_newest_first[:limit]})
+
+
+def _handle_posts_post(body: bytes) -> tuple[int, str]:
+    """Add a new community post."""
+    try:
+        data = json.loads(body.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return 400, json.dumps({"error": "Invalid JSON body"})
+
+    message = str(data.get("message", "")).strip()
+    author  = str(data.get("author", "anonymous")).strip() or "anonymous"
+
+    if not message:
+        return 400, json.dumps({"error": "message is required"})
+    if len(message) > 1000:
+        return 400, json.dumps({"error": "message must be 1000 characters or fewer"})
+    if len(author) > 60:
+        author = author[:60]
+
+    post = {
+        "id":        str(uuid.uuid4()),
+        "author":    author,
+        "message":   message,
+        "timestamp": int(time.time()),
+    }
+
+    posts = _load_posts()
+    posts.append(post)
+    # Trim oldest entries if over cap
+    if len(posts) > _MAX_POSTS:
+        posts = posts[-_MAX_POSTS:]
+    _save_posts(posts)
+
+    return 201, json.dumps({"status": "posted", "post": post})
+
+
+# ---------------------------------------------------------------------------
 # API handlers
 # ---------------------------------------------------------------------------
 
@@ -313,6 +385,8 @@ def _serve_static(path: str) -> tuple[int, bytes, str]:
         "/resources.html":    "resources.html",
         "/apps":              "apps.html",
         "/apps.html":         "apps.html",
+        "/feed":               "feed.html",
+        "/feed.html":          "feed.html",
         "/directory":         "directory.html",
         "/directory.html":    "directory.html",
         "/legal":             "legal.html",
@@ -350,6 +424,7 @@ async def _handle_connection(
                     "/project", "/project.html",
                     "/resources", "/resources.html",
                     "/apps", "/apps.html",
+                    "/feed", "/feed.html",
                     "/directory", "/directory.html",
                     "/legal", "/legal.html"):
             status, resp_body, ct = _serve_static(path)
@@ -371,6 +446,14 @@ async def _handle_connection(
                 status, resp_body = _handle_directory_get()
             elif method == "POST":
                 status, resp_body = _handle_directory_post(body)
+            else:
+                status, resp_body = 400, json.dumps({"error": "method not allowed"})
+            _http_response(writer, status, resp_body)
+        elif path == "/api/posts":
+            if method == "GET":
+                status, resp_body = _handle_posts_get(qs)
+            elif method == "POST":
+                status, resp_body = _handle_posts_post(body)
             else:
                 status, resp_body = 400, json.dumps({"error": "method not allowed"})
             _http_response(writer, status, resp_body)
