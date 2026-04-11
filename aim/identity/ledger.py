@@ -29,6 +29,14 @@ class EventKind(str, Enum):
     PEER_CONNECTED = "peer_connected"
     MEMORY_SHARED  = "memory_shared"
     CUSTOM         = "custom"
+    # Mesh subsystem events
+    GATEWAY_CONNECTED    = "gateway_connected"
+    GATEWAY_DISCONNECTED = "gateway_disconnected"
+    RELAY_PEER_CONNECTED = "relay_peer_connected"
+    RELAY_MSG_FORWARDED  = "relay_message_forwarded"
+    CONTENT_POSTED       = "content_posted"
+    CONTENT_DELETED      = "content_deleted"
+    MESH_NODE_JOINED     = "mesh_node_joined"
 
 
 @dataclass
