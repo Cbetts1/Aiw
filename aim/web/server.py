@@ -28,6 +28,7 @@ from pathlib import Path
 from aim import __version__, __origin__
 from aim.node.base import _send_message, _recv_message
 from aim.protocol.message import AIMMessage
+from aim.ans.registry import ANSRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -272,6 +273,27 @@ def _handle_info() -> tuple[int, str]:
     })
 
 
+def _handle_ans_get(qs: dict[str, str]) -> tuple[int, str]:
+    """Look up an ANS name and return the matching NodeRecord info as JSON."""
+    name = qs.get("name", "").strip()
+    if not name:
+        return 400, json.dumps({"error": "name parameter is required"})
+    registry = ANSRegistry.default()
+    record = registry.get(name)
+    if record is None:
+        return 404, json.dumps({"error": f"ANS name '{name}' not found"})
+    return 200, json.dumps({
+        "name":         record.name,
+        "aim_uri":      record.aim_uri,
+        "node_id":      record.node_id,
+        "host":         record.host,
+        "port":         record.port,
+        "capabilities": record.capabilities,
+        "creator":      record.creator,
+        "ttl_seconds":  record.ttl_seconds,
+    })
+
+
 def _serve_static(path: str) -> tuple[int, bytes, str]:
     """Return (status, body_bytes, content_type) for a static file request."""
     mapping: dict[str, str] = {
@@ -325,6 +347,9 @@ async def _handle_connection(
             _http_response(writer, status, resp_body)
         elif path == "/api/info":
             status, resp_body = _handle_info()
+            _http_response(writer, status, resp_body)
+        elif path == "/api/ans":
+            status, resp_body = _handle_ans_get(qs)
             _http_response(writer, status, resp_body)
         elif path == "/api/directory":
             if method == "GET":

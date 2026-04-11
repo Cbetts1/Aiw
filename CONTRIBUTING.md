@@ -4,16 +4,58 @@ Thank you for your interest in contributing.  This document describes the
 conventions, branch strategy, and design rules that keep the AIM codebase
 coherent and trustworthy.
 
+AIM is built to be the twin of the World Wide Web — free, open, and accessible
+to all of humanity. We welcome contributions from anyone, anywhere.
+
 ---
 
 ## Table of Contents
 
-1. [Code Style](#code-style)
-2. [Branch Rules](#branch-rules)
-3. [CreatorSignature Requirement](#creatorsignature-requirement)
-4. [Testing](#testing)
-5. [Security & Compliance](#security--compliance)
-6. [Licence](#licence)
+1. [Code of Conduct](#code-of-conduct)
+2. [Contributor License Agreement (CLA)](#contributor-license-agreement-cla)
+3. [RFC Process](#rfc-process)
+4. [Code Style](#code-style)
+5. [Branch Rules](#branch-rules)
+6. [CreatorSignature Requirement](#creatorsignature-requirement)
+7. [Testing](#testing)
+8. [Security & Compliance](#security--compliance)
+9. [Licence](#licence)
+
+---
+
+## Code of Conduct
+
+All participants must adhere to the [AIM Code of Conduct](CODE_OF_CONDUCT.md).
+Please read it before contributing.
+
+---
+
+## Contributor License Agreement (CLA)
+
+By opening a pull request you implicitly agree to the
+[AIM Individual Contributor License Agreement](CLA.md).  No additional
+paperwork is required for individual contributors.  Corporate contributors
+must open an issue titled **"Corporate CLA — [Company Name]"** before their
+first pull request is merged.
+
+---
+
+## RFC Process
+
+Protocol changes, new intent types, capability registrations, and architectural
+proposals must go through the **AIM RFC (Request for Comment) process**.
+
+The short version:
+1. Open a GitHub Discussion titled `[RFC] Your proposal title`.
+2. Allow at least **14 days** for community feedback.
+3. Incorporate feedback and open a pull request adding a formal RFC document
+   to `docs/rfcs/`.  See [`docs/governance/RFC-PROCESS.md`](docs/governance/RFC-PROCESS.md)
+   for the full workflow.
+
+Bug fixes, documentation corrections, and non-breaking implementation
+improvements **do not** require an RFC.
+
+---
 
 ---
 
@@ -105,8 +147,9 @@ The web gateway (`aim/web/`) must comply with:
 
 ## Licence
 
-AIM is released under the [MIT Licence](LICENSE).  All contributions must be
-compatible with this licence.  By submitting a pull request you agree that
-your contribution will be licensed under MIT.
+AIM is released under the [Apache License 2.0](LICENSE).  All contributions
+must be compatible with this licence.  By submitting a pull request you agree
+that your contribution will be licensed under Apache 2.0 as described in the
+[CLA](CLA.md).
 
-Copyright © Cbetts1
+Copyright © 2026 Cbetts1 (AIM Foundation)
