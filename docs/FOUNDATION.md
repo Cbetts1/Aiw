@@ -289,7 +289,19 @@ corporations, or governments who might attempt to shut it down:
 - **Dead man's switch.** If the founder (Christopher Lee Betts) is ever unable
   to maintain the project — for any reason — the project continues. It is
   designed with no off-switch. The community, the board, and the global network
-  of nodes carry it forward.
+  of nodes carry it forward. Technical continuity mechanisms include:
+  - Repository access shared with trusted board members in multiple jurisdictions
+  - Encrypted key escrow for signing credentials held by at least 3 independent trustees
+  - Automated mirroring of the repository to multiple hosting platforms and countries
+  - Succession planning documented in the board's sealed governance records
+
+> **Note:** The legal language in this charter — including the phrases "binding"
+> and "irrevocable" — reflects the founder's strongest possible intent to make
+> these commitments permanent. Formal enforceability depends on the specific
+> legal structures adopted during incorporation in each jurisdiction. The Aura
+> Project will seek legal counsel during incorporation to ensure these
+> commitments are encoded in legally binding articles of incorporation, bylaws,
+> and trust instruments in every jurisdiction where the foundation operates.
 
 ---
 
