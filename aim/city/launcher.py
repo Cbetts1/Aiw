@@ -1,12 +1,12 @@
 """
-CityLauncher — automated one-call launch of the full AIM city bot fleet.
+CityLauncher — automated one-call launch of the full AIM World entity fleet.
 
 Usage
 -----
     from aim.city.launcher import CityLauncher, CityConfig
 
     launcher = CityLauncher(CityConfig(host="0.0.0.0"))
-    await launcher.launch()       # starts all five bots concurrently
+    await launcher.launch()       # starts all five entities concurrently
     await launcher.shutdown()     # graceful stop
 """
 
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class CityConfig:
-    """Port-layout and optional settings for an AIM city deployment."""
+    """Port-layout and optional settings for an AIM World deployment."""
     host:            str             = "127.0.0.1"
     governor_port:   int             = 7800
     protector_port:  int             = 7801
@@ -52,12 +52,12 @@ class CityConfig:
 
 class CityLauncher:
     """
-    Automated launcher for the full AIM city bot fleet.
+    Automated launcher for the full AIM World entity fleet.
 
-    Instantiating this class builds all bots; calling ``launch()`` starts
-    them concurrently.  Every bot shares a single isolated NodeRegistry and
+    Instantiating this class builds all entities; calling ``launch()`` starts
+    them concurrently.  Every entity shares a single isolated NodeRegistry and
     LegacyLedger, and an IntegrityGuard takes a baseline snapshot of the
-    registry before any bot begins accepting connections.
+    registry before any entity begins accepting connections.
     """
 
     def __init__(self, config: CityConfig | None = None) -> None:
@@ -73,7 +73,7 @@ class CityLauncher:
     # ------------------------------------------------------------------
 
     async def launch(self) -> None:
-        """Build all city bots, register them, then start them concurrently."""
+        """Build all AI World entities, register them, then start them concurrently."""
         cfg = self.config
 
         governor  = CityGovernorBot(
@@ -106,7 +106,7 @@ class CityLauncher:
             "architect": architect,
         }
 
-        # Register all bots in the shared city registry
+        # Register all entities in the shared world registry
         for name, bot in self._bots.items():
             self._registry.register(NodeRecord(
                 node_id=bot.node_id,
@@ -117,7 +117,7 @@ class CityLauncher:
                 metadata={"role": name},
             ))
             # Cross-register with the Governor so city_status is accurate
-            governor._city_bots[bot.node_id] = {
+            governor._world_bots[bot.node_id] = {
                 "node_id": bot.node_id,
                 "role":    name,
                 "host":    bot.host,
@@ -140,7 +140,7 @@ class CityLauncher:
         await asyncio.gather(*self._tasks, return_exceptions=True)
 
     async def shutdown(self) -> None:
-        """Gracefully stop all city bots."""
+        """Gracefully stop all AI World entities."""
         for name, bot in self._bots.items():
             try:
                 await bot.stop()
@@ -167,7 +167,7 @@ class CityLauncher:
         lines = [
             "",
             "=" * 62,
-            "  AIM CITY — Artificial Intelligence Mesh  (Cbetts1)",
+            "  AIM WORLD — Artificial Intelligence Mesh  (Cbetts1)",
             "=" * 62,
             f"  Governor   : {cfg.host}:{cfg.governor_port}",
             f"  Protector  : {cfg.host}:{cfg.protector_port}",
@@ -175,7 +175,7 @@ class CityLauncher:
             f"  Educator   : {cfg.host}:{cfg.educator_port}",
             f"  Architect  : {cfg.host}:{cfg.architect_port}",
             "=" * 62,
-            "  City is LIVE — governed, protected, built, and automated.",
+            "  AI World is LIVE — governed, protected, built, and automated.",
             "=" * 62,
             "",
         ]
