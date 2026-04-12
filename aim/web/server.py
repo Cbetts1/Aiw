@@ -24,6 +24,7 @@ POST /api/dns/register            Register a DNS hostname as ANS record → JSON
 POST /api/content                 Publish a new content item (PUBLISH intent) → JSON
 GET  /api/content                 List content items with optional filters (LIST intent) → JSON
 GET  /api/content/<id>            Read a single content item by ID (READ intent) → JSON
+POST /api/www/publish             Register a site on AIM mesh and bridge it to the WWW → JSON
 
 All responses include CORS and security headers.
 """
@@ -518,6 +519,8 @@ def _serve_static(path: str) -> tuple[int, bytes, str]:
         "/posts":             "posts-list.html",
         "/posts/create":      "posts-create.html",
         "/posts/view":        "posts-view.html",
+        "/publish-to-www":    "publish-to-www.html",
+        "/publish-to-www.html": "publish-to-www.html",
     }
     filename = mapping.get(path)
     if filename is None:
@@ -718,6 +721,69 @@ def _handle_content_list_direct(qs: dict[str, str]) -> tuple[int, str]:
 
 
 # ---------------------------------------------------------------------------
+# WWW Publisher API
+# ---------------------------------------------------------------------------
+
+def _handle_www_publish(body: bytes) -> tuple[int, str]:
+    """
+    Register an AIM-hosted site into the AIM directory AND record it as a
+    traditional-WWW entry.  This is the bridge that lets content created on
+    the AIM mesh appear as a standard web resource.
+
+    Expected JSON body
+    ------------------
+    {
+      "name":        "My Site",
+      "url":         "https://example.com",   # traditional WWW URL
+      "description": "optional",
+      "category":    "website",               # optional
+      "creator":     "alice"                  # optional
+    }
+    """
+    try:
+        data: dict[str, Any] = json.loads(body.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return 400, json.dumps({"error": "Invalid JSON body"})
+
+    name = str(data.get("name", "")).strip()
+    url  = str(data.get("url",  "")).strip()
+    desc = str(data.get("description", "")).strip()
+    cat  = str(data.get("category", "website")).strip().lower()
+    creator = str(data.get("creator", "anonymous")).strip()
+
+    if not name:
+        return 400, json.dumps({"error": "name is required"})
+    if not url:
+        return 400, json.dumps({"error": "url is required"})
+    if not (url.startswith("http://") or url.startswith("https://")):
+        return 400, json.dumps({"error": "url must start with http:// or https://"})
+
+    # Register in the AIM directory so both AIM and WWW snapshots include it
+    entry_payload = json.dumps({
+        "name":        name,
+        "url":         url,
+        "description": desc,
+        "category":    cat,
+        "creator":     creator,
+    }).encode("utf-8")
+    dir_status, dir_body = _handle_directory_post(entry_payload)
+
+    if dir_status not in (200, 201):
+        return dir_status, dir_body
+
+    dir_entry = json.loads(dir_body).get("entry", {})
+    return 201, json.dumps({
+        "status":    "published_to_www",
+        "aim_entry": dir_entry,
+        "www_url":   url,
+        "message":   (
+            "Site registered in the AIM directory. "
+            "Run 'aim www publish' to generate a static WWW snapshot."
+        ),
+    })
+
+
+# ---------------------------------------------------------------------------
 # Connection handler
 # ---------------------------------------------------------------------------
 
@@ -752,7 +818,8 @@ async def _handle_connection(
                       "/feed", "/feed.html",
                       "/directory", "/directory.html",
                       "/legal", "/legal.html",
-                      "/posts", "/posts/create", "/posts/view"):
+                      "/posts", "/posts/create", "/posts/view",
+                      "/publish-to-www", "/publish-to-www.html"):
             status, resp_body, ct = _serve_static(path)
             _http_response(writer, status, resp_body, ct)
 
@@ -864,6 +931,17 @@ async def _handle_connection(
             content_id = path[len("/api/content/"):]
             if method == "GET":
                 status, resp_body = _handle_content_get_by_id(content_id)
+            else:
+                status, resp_body = 405, _METHOD_NOT_ALLOWED
+            _http_response(writer, status, resp_body)
+
+        # ── WWW Publisher API ──────────────────────────────────────────
+        elif path == "/api/www/publish":
+            if method == "POST":
+                if not _check_rate_limit(peer_ip):
+                    status, resp_body = 429, _RATE_LIMIT_EXCEEDED
+                else:
+                    status, resp_body = _handle_www_publish(body)
             else:
                 status, resp_body = 405, _METHOD_NOT_ALLOWED
             _http_response(writer, status, resp_body)

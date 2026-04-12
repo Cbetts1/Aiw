@@ -105,7 +105,7 @@ async def _cmd_relay_start(args: argparse.Namespace) -> None:
         await node.stop()
 
 
-
+async def _cmd_node_start(args: argparse.Namespace) -> None:
     sig = CreatorSignature()
     node = AgentNode(
         host=args.host,
@@ -378,13 +378,9 @@ async def _cmd_mesh_up(args: argparse.Namespace) -> None:
 
     if args.with_gateway:
         from aim.gateway.node import GatewayNode
-        relay_peers: list[tuple[str, int]] = []
-        if args.with_relay:
-            relay_peers = [(args.host, args.relay_port)]
         gateway = GatewayNode(
             host=args.host,
             port=args.gateway_port,
-            relay_peers=relay_peers,
             ledger=ledger,
         )
         payload["gateway"] = {"host": args.host, "port": args.gateway_port}
@@ -657,6 +653,65 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Comma-separated capability tags for this node",
     )
 
+    # --- mesh subcommand ---
+    mesh_p = sub.add_parser("mesh", help="AIM mesh orchestration commands")
+    mesh_sub = mesh_p.add_subparsers(dest="mesh_command")
+
+    mesh_up_p = mesh_sub.add_parser("up", help="Bring up a local AIM mesh (node + optional gateway/relay)")
+    mesh_up_p.add_argument("--host", default="127.0.0.1", help="Bind host for all services")
+    mesh_up_p.add_argument("--node-port", type=int, default=7700, dest="node_port",
+                           help="Agent node port (default: 7700)")
+    mesh_up_p.add_argument("--with-gateway", action="store_true", dest="with_gateway",
+                           help="Also start a gateway node")
+    mesh_up_p.add_argument("--gateway-port", type=int, default=7600, dest="gateway_port",
+                           help="Gateway port (default: 7600)")
+    mesh_up_p.add_argument("--with-relay", action="store_true", dest="with_relay",
+                           help="Also start a relay node")
+    mesh_up_p.add_argument("--relay-port", type=int, default=7500, dest="relay_port",
+                           help="Relay port (default: 7500)")
+
+    mesh_join_p = mesh_sub.add_parser("join", help="Join an existing AIM mesh via a gateway")
+    mesh_join_p.add_argument("gateway", help="Gateway address as host:port")
+    mesh_join_p.add_argument("--host", default="127.0.0.1", help="Local bind host")
+    mesh_join_p.add_argument("--node-port", type=int, default=7700, dest="node_port",
+                             help="Local node port (default: 7700)")
+
+    mesh_status_p = mesh_sub.add_parser("status", help="Check mesh node status")
+    mesh_status_p.add_argument("--host", default="127.0.0.1")
+    mesh_status_p.add_argument("--port", type=int, default=7700)
+
+    mesh_peers_p = mesh_sub.add_parser("peers", help="List relay peers in the mesh")
+    mesh_peers_p.add_argument("--host", default="127.0.0.1")
+    mesh_peers_p.add_argument("--port", type=int, default=7600)
+
+    # --- www subcommand ---
+    www_p = sub.add_parser("www", help="Traditional WWW bridge and publisher")
+    www_sub = www_p.add_subparsers(dest="www_command")
+
+    www_start_p = www_sub.add_parser(
+        "start", help="Start the AIM-to-WWW bridge on standard HTTP port 80"
+    )
+    www_start_p.add_argument(
+        "--host", default="0.0.0.0",
+        help="Interface to listen on (default: 0.0.0.0)",
+    )
+    www_start_p.add_argument(
+        "--port", type=int, default=80,
+        help="HTTP port to serve on (default: 80)",
+    )
+
+    www_publish_p = www_sub.add_parser(
+        "publish", help="Publish the AIM site to a traditional WWW-compatible static snapshot"
+    )
+    www_publish_p.add_argument(
+        "--out", default="./aim-www-site",
+        help="Output directory for the static site snapshot (default: ./aim-www-site)",
+    )
+    www_publish_p.add_argument(
+        "--aim-url", default="http://127.0.0.1:8080", dest="aim_url",
+        help="Running AIM web bridge to pull content from (default: http://127.0.0.1:8080)",
+    )
+
     return parser
 
 
@@ -726,6 +781,32 @@ def main(argv: list[str] | None = None) -> None:
                 sub.print_help()
     elif args.command == "node" and getattr(args, "node_command", None) == "connect-gateway":
         asyncio.run(_cmd_node_connect_gateway(args))
+    elif args.command == "mesh":
+        mesh_cmd = getattr(args, "mesh_command", None)
+        if mesh_cmd == "up":
+            asyncio.run(_cmd_mesh_up(args))
+        elif mesh_cmd == "join":
+            asyncio.run(_cmd_mesh_join(args))
+        elif mesh_cmd == "status":
+            asyncio.run(_cmd_mesh_status(args))
+        elif mesh_cmd == "peers":
+            asyncio.run(_cmd_mesh_peers(args))
+        else:
+            sub = _get_subparser(parser, "mesh")
+            if sub:
+                sub.print_help()
+    elif args.command == "www":
+        www_cmd = getattr(args, "www_command", None)
+        if www_cmd == "start":
+            from aim.web.server import start_web_server
+            asyncio.run(start_web_server(host=args.host, port=args.port))
+        elif www_cmd == "publish":
+            from aim.www.publisher import publish_static_site
+            publish_static_site(out_dir=args.out, aim_url=args.aim_url)
+        else:
+            sub = _get_subparser(parser, "www")
+            if sub:
+                sub.print_help()
     else:
         parser.print_help()
 
