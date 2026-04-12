@@ -478,6 +478,94 @@ async def _cmd_mesh_join(args: argparse.Namespace) -> None:
         ledger.record(EventKind.NODE_STOPPED, node.node_id)
 
 
+async def _cmd_cc_register(args: argparse.Namespace) -> None:
+    from aim.command_center.identity import VirtualDeviceIdentity
+    from aim.command_center.client import CommandCenterClient
+
+    caps = args.capabilities.split(",") if getattr(args, "capabilities", "") else []
+    ident = VirtualDeviceIdentity.new(
+        name=args.name,
+        repo_url=args.repo_url,
+        capabilities=caps,
+    )
+    client = CommandCenterClient(
+        cc_host=args.cc_host,
+        cc_port=args.cc_port,
+        device_identity=ident,
+    )
+    print(f"\n{'='*60}")
+    print(f"  AIM Command Center — Register")
+    print(f"  Device : {ident}")
+    print(f"  CC     : {args.cc_host}:{args.cc_port}")
+    print(f"  Valid  : {ident.verify()}")
+    print(f"{'='*60}\n")
+    try:
+        await asyncio.wait_for(client.connect(), timeout=5.0)
+        print("Connected to Command Center successfully.")
+        await client.disconnect()
+    except Exception as exc:
+        print(f"Could not connect to CC: {exc}", file=sys.stderr)
+
+
+async def _cmd_cc_status(args: argparse.Namespace) -> None:
+    from aim.command_center.identity import VirtualDeviceIdentity
+    from aim.command_center.client import CommandCenterClient
+    from aim.health.reporter import HealthReporter
+
+    ident = VirtualDeviceIdentity.new(name="cli-status", repo_url="")
+    client = CommandCenterClient(
+        cc_host=args.cc_host,
+        cc_port=args.cc_port,
+        device_identity=ident,
+    )
+    reporter = HealthReporter(node_id=ident.device_id)
+    snap = reporter.snapshot()
+    print(f"\n{'='*60}")
+    print(f"  AIM Command Center — Status")
+    print(f"  CC          : {args.cc_host}:{args.cc_port}")
+    print(f"  Connected   : {client.is_connected}")
+    print(f"  Node health : {snap.status}")
+    print(f"{'='*60}\n")
+    print(snap.to_json())
+
+
+def _cmd_health(args: argparse.Namespace) -> None:
+    from aim.health.reporter import HealthReporter
+    import uuid as _uuid
+    node_id = str(_uuid.uuid4())
+    reporter = HealthReporter(node_id=node_id)
+    snap = reporter.snapshot()
+    print(snap.to_json())
+
+
+def _cmd_build_module(args: argparse.Namespace) -> None:
+    from aim.builder.engine import BuilderEngine, ModuleSpec
+    caps = args.capabilities.split(",") if getattr(args, "capabilities", "") else []
+    spec = ModuleSpec(
+        name=args.name,
+        description=getattr(args, "description", ""),
+        capabilities=caps,
+        template=getattr(args, "template", "agent_node"),
+    )
+    engine = BuilderEngine()
+    result = engine.build_module(spec)
+    if result.success:
+        print(f"Module '{args.name}' built successfully.")
+        for f in result.files_created:
+            print(f"  Created: {f}")
+    else:
+        print(f"Build failed:", file=sys.stderr)
+        for e in result.errors:
+            print(f"  {e}", file=sys.stderr)
+
+
+def _cmd_build_list(args: argparse.Namespace) -> None:
+    from aim.builder.engine import BuilderEngine
+    engine = BuilderEngine()
+    modules = engine.list_modules()
+    print(json.dumps({"modules": modules}, indent=2))
+
+
 async def _cmd_mesh_status(args: argparse.Namespace) -> None:
     msg = AIMMessage.heartbeat(sender_id="cli")
     reader, writer = await asyncio.open_connection(args.host, args.port)
@@ -657,6 +745,49 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Comma-separated capability tags for this node",
     )
 
+    # --- cc subcommand ---
+    cc_p = sub.add_parser("cc", help="Command Center operations")
+    cc_sub = cc_p.add_subparsers(dest="cc_command")
+
+    cc_register_p = cc_sub.add_parser("register", help="Register this device with a Command Center")
+    cc_register_p.add_argument("--cc-host", default="127.0.0.1", dest="cc_host")
+    cc_register_p.add_argument("--cc-port", type=int, default=9000, dest="cc_port")
+    cc_register_p.add_argument("--name", default="aim-device")
+    cc_register_p.add_argument("--repo-url", default="https://github.com/Cbetts1/Aiw", dest="repo_url")
+    cc_register_p.add_argument("--capabilities", default="")
+
+    cc_status_p = cc_sub.add_parser("status", help="Show CC connection status and health")
+    cc_status_p.add_argument("--cc-host", default="127.0.0.1", dest="cc_host")
+    cc_status_p.add_argument("--cc-port", type=int, default=9000, dest="cc_port")
+
+    # --- health subcommand ---
+    health_p = sub.add_parser("health", help="Report node health metrics")
+    health_p.add_argument("--host", default="127.0.0.1")
+    health_p.add_argument("--port", type=int, default=7700)
+
+    # --- build subcommand ---
+    build_p = sub.add_parser("build", help="AIM module/script/config builder")
+    build_sub = build_p.add_subparsers(dest="build_command")
+
+    build_module_p = build_sub.add_parser("module", help="Scaffold a new AIM subpackage")
+    build_module_p.add_argument("name", help="Module name (Python identifier)")
+    build_module_p.add_argument("--description", default="", help="Module description")
+    build_module_p.add_argument("--template", default="agent_node",
+                                choices=["agent_node", "base_node"],
+                                help="Code template (default: agent_node)")
+    build_module_p.add_argument("--capabilities", default="",
+                                help="Comma-separated capability tags")
+
+    build_sub.add_parser("list", help="List built AIM modules")
+
+    build_script_p = build_sub.add_parser("script", help="Generate a shell script")
+    build_script_p.add_argument("name", help="Script name (without .sh)")
+    build_script_p.add_argument("--description", default="", help="Script description")
+
+    build_config_p = build_sub.add_parser("config", help="Write a JSON config file")
+    build_config_p.add_argument("name", help="Config name (without .json)")
+    build_config_p.add_argument("--data", default="{}", help="JSON data string")
+
     return parser
 
 
@@ -726,6 +857,49 @@ def main(argv: list[str] | None = None) -> None:
                 sub.print_help()
     elif args.command == "node" and getattr(args, "node_command", None) == "connect-gateway":
         asyncio.run(_cmd_node_connect_gateway(args))
+    elif args.command == "cc":
+        cc_cmd = getattr(args, "cc_command", None)
+        if cc_cmd == "register":
+            asyncio.run(_cmd_cc_register(args))
+        elif cc_cmd == "status":
+            asyncio.run(_cmd_cc_status(args))
+        else:
+            sub = _get_subparser(parser, "cc")
+            if sub:
+                sub.print_help()
+    elif args.command == "health":
+        _cmd_health(args)
+    elif args.command == "build":
+        build_cmd = getattr(args, "build_command", None)
+        if build_cmd == "module":
+            _cmd_build_module(args)
+        elif build_cmd == "list":
+            _cmd_build_list(args)
+        elif build_cmd == "script":
+            from aim.builder.engine import BuilderEngine
+            engine = BuilderEngine()
+            result = engine.build_script(args.name, getattr(args, "description", ""), "")
+            if result.success:
+                print(f"Script created: {result.module_path}")
+            else:
+                print("Script build failed:", *result.errors, file=sys.stderr)
+        elif build_cmd == "config":
+            from aim.builder.engine import BuilderEngine
+            engine = BuilderEngine()
+            try:
+                data = json.loads(args.data)
+            except json.JSONDecodeError as exc:
+                print(f"Invalid JSON for --data: {exc}", file=sys.stderr)
+                sys.exit(1)
+            result = engine.build_config(args.name, data)
+            if result.success:
+                print(f"Config created: {result.module_path}")
+            else:
+                print("Config build failed:", *result.errors, file=sys.stderr)
+        else:
+            sub = _get_subparser(parser, "build")
+            if sub:
+                sub.print_help()
     else:
         parser.print_help()
 
