@@ -180,10 +180,9 @@ class ContentNode(AgentNode):
             limit = int(p.get("limit", 50))
         except (TypeError, ValueError):
             limit = 50
-        # Total matching count (before limit)
-        all_matching = self._content_store.list(**filters, limit=10_000, offset=0)
-        total_count = len(all_matching)
-        posts = all_matching[:limit]
+        # Total matching count (before limit) — efficient, no full fetch
+        total_count = self._content_store.count_matching(**filters)
+        posts = self._content_store.list(**filters, limit=limit, offset=0)
         return AIMMessage.respond(
             correlation_id=msg.message_id,
             result={
@@ -201,7 +200,8 @@ class ContentNode(AgentNode):
 
     def _load(self) -> list[dict[str, Any]]:
         """Return all stored posts as a list of dicts (newest first)."""
-        return [i.to_dict() for i in self._content_store.list(limit=10_000)]
+        total = self._content_store.count()
+        return [i.to_dict() for i in self._content_store.list(limit=max(total, 1))]
 
     # ------------------------------------------------------------------
     # Content intent handlers (used via _handler.dispatch)
