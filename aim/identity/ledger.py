@@ -33,6 +33,9 @@ class EventKind(str, Enum):
     RELAY_FORWARD  = "relay_forward"
     RELAY_HEARTBEAT = "relay_heartbeat"
     CUSTOM         = "custom"
+    # Mesh events
+    MESH_NODE_JOINED  = "mesh_node_joined"
+    MESH_NODE_LEFT    = "mesh_node_left"
     # Gateway events
     GATEWAY_NODE_REGISTERED   = "gateway_node_registered"
     GATEWAY_NODE_DISCONNECTED = "gateway_node_disconnected"

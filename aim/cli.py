@@ -105,7 +105,7 @@ async def _cmd_relay_start(args: argparse.Namespace) -> None:
         await node.stop()
 
 
-
+async def _cmd_node_start(args: argparse.Namespace) -> None:
     sig = CreatorSignature()
     node = AgentNode(
         host=args.host,
@@ -657,6 +657,31 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Comma-separated capability tags for this node",
     )
 
+    # --- mesh subcommand ---
+    mesh_p = sub.add_parser("mesh", help="AIM mesh network commands")
+    mesh_sub = mesh_p.add_subparsers(dest="mesh_command")
+
+    mesh_up_p = mesh_sub.add_parser("up", help="Bring up a full local mesh stack")
+    mesh_up_p.add_argument("--host", default="127.0.0.1")
+    mesh_up_p.add_argument("--node-port",    type=int, default=7700, dest="node_port")
+    mesh_up_p.add_argument("--gateway-port", type=int, default=7900, dest="gateway_port")
+    mesh_up_p.add_argument("--relay-port",   type=int, default=7600, dest="relay_port")
+    mesh_up_p.add_argument("--with-gateway", action="store_true", dest="with_gateway")
+    mesh_up_p.add_argument("--with-relay",   action="store_true", dest="with_relay")
+
+    mesh_join_p = mesh_sub.add_parser("join", help="Join an existing mesh via a gateway")
+    mesh_join_p.add_argument("--gateway", required=True, help="Gateway host:port (e.g. 1.2.3.4:7900)")
+    mesh_join_p.add_argument("--host", default="127.0.0.1")
+    mesh_join_p.add_argument("--node-port", type=int, default=7700, dest="node_port")
+
+    mesh_status_p = mesh_sub.add_parser("status", help="Check mesh node status")
+    mesh_status_p.add_argument("--host", default="127.0.0.1")
+    mesh_status_p.add_argument("--port", type=int, default=7700)
+
+    mesh_peers_p = mesh_sub.add_parser("peers", help="List relay peers")
+    mesh_peers_p.add_argument("--host", default="127.0.0.1")
+    mesh_peers_p.add_argument("--port", type=int, default=7600)
+
     return parser
 
 
@@ -726,6 +751,20 @@ def main(argv: list[str] | None = None) -> None:
                 sub.print_help()
     elif args.command == "node" and getattr(args, "node_command", None) == "connect-gateway":
         asyncio.run(_cmd_node_connect_gateway(args))
+    elif args.command == "mesh":
+        mesh_cmd = getattr(args, "mesh_command", None)
+        if mesh_cmd == "up":
+            asyncio.run(_cmd_mesh_up(args))
+        elif mesh_cmd == "join":
+            asyncio.run(_cmd_mesh_join(args))
+        elif mesh_cmd == "status":
+            asyncio.run(_cmd_mesh_status(args))
+        elif mesh_cmd == "peers":
+            asyncio.run(_cmd_mesh_peers(args))
+        else:
+            sub = _get_subparser(parser, "mesh")
+            if sub:
+                sub.print_help()
     else:
         parser.print_help()
 

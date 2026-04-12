@@ -47,6 +47,7 @@ from aim.node.base import _send_message, _recv_message
 from aim.protocol.message import AIMMessage
 from aim.ans.registry import ANSRegistry
 from aim.content.node import ContentNode
+from aim.ai.brain import AIBrain
 
 logger = logging.getLogger(__name__)
 
@@ -518,6 +519,10 @@ def _serve_static(path: str) -> tuple[int, bytes, str]:
         "/posts":             "posts-list.html",
         "/posts/create":      "posts-create.html",
         "/posts/view":        "posts-view.html",
+        "/aim":               "aim.html",
+        "/aim.html":          "aim.html",
+        "/connections":       "connections.html",
+        "/connections.html":  "connections.html",
     }
     filename = mapping.get(path)
     if filename is None:
@@ -615,7 +620,8 @@ def _handle_dns_records() -> tuple[int, str]:
     return 200, json.dumps({"count": len(records), "records": records})
 
 
-def _handle_dns_register(body: bytes) -> tuple[int, str]:    """Register a DNS hostname as an ANS record."""
+def _handle_dns_register(body: bytes) -> tuple[int, str]:
+    """Register a DNS hostname as an ANS record."""
     from aim.dns.bridge import DNSBridge
     try:
         data: dict[str, Any] = json.loads(body.decode("utf-8"))
@@ -717,6 +723,103 @@ def _handle_content_list(qs: dict[str, str]) -> tuple[int, str]:
 
 
 # ---------------------------------------------------------------------------
+# AI Brain handlers
+# ---------------------------------------------------------------------------
+
+async def _handle_ai_query(qs: dict[str, str], body: bytes, method: str) -> tuple[int, str]:
+    """Handle GET /api/ai/query or POST /api/ai/think."""
+    if method == "POST":
+        try:
+            data: dict[str, Any] = json.loads(body.decode("utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return 400, json.dumps({"error": "Invalid JSON body"})
+        text        = str(data.get("query", data.get("text", ""))).strip()
+        session_id  = str(data.get("session_id", "")).strip() or None
+        node_host   = str(data.get("node_host", "")).strip() or None
+        node_port_s = data.get("node_port")
+    else:
+        text        = qs.get("q", "").strip()
+        session_id  = qs.get("session_id") or None
+        node_host   = qs.get("node_host") or None
+        node_port_s = qs.get("node_port")
+
+    if not text:
+        return 400, json.dumps({"error": "query text is required (param: q or body.query)"})
+
+    node_port: int | None = None
+    if node_port_s:
+        try:
+            node_port = int(node_port_s)
+        except (ValueError, TypeError):
+            return 400, json.dumps({"error": "node_port must be an integer"})
+
+    brain  = AIBrain.default()
+    result = await brain.query(text, session_id=session_id,
+                               node_host=node_host, node_port=node_port)
+    return 200, json.dumps(result)
+
+
+def _handle_ai_status() -> tuple[int, str]:
+    return 200, json.dumps(AIBrain.default().status())
+
+
+def _handle_ai_session_history(qs: dict[str, str]) -> tuple[int, str]:
+    sid = qs.get("session_id", "").strip()
+    if not sid:
+        return 400, json.dumps({"error": "session_id is required"})
+    history = AIBrain.default().session_history(sid)
+    return 200, json.dumps({"session_id": sid, "history": history})
+
+
+# ---------------------------------------------------------------------------
+# Remote connections (stored in vcloud)
+# ---------------------------------------------------------------------------
+
+def _handle_connections_get() -> tuple[int, str]:
+    connections = AIBrain.default().list_connections()
+    return 200, json.dumps({"count": len(connections), "connections": connections})
+
+
+def _handle_connections_post(body: bytes) -> tuple[int, str]:
+    try:
+        data: dict[str, Any] = json.loads(body.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return 400, json.dumps({"error": "Invalid JSON body"})
+
+    host = str(data.get("host", "")).strip()
+    name = str(data.get("name", "")).strip()
+    caps = data.get("capabilities", [])
+    try:
+        port = int(data.get("port", 0))
+    except (ValueError, TypeError):
+        return 400, json.dumps({"error": "port must be an integer"})
+
+    if not host:
+        return 400, json.dumps({"error": "host is required"})
+    if not port:
+        return 400, json.dumps({"error": "port is required"})
+
+    brain  = AIBrain.default()
+    result = brain.register_connection(
+        name=name,
+        host=host,
+        port=port,
+        capabilities=caps if isinstance(caps, list) else [],
+    )
+    return 201, json.dumps({"status": "connected", "connection": result})
+
+
+def _handle_connections_delete(qs: dict[str, str]) -> tuple[int, str]:
+    resource_id = qs.get("id", "").strip()
+    if not resource_id:
+        return 400, json.dumps({"error": "id parameter is required"})
+    removed = AIBrain.default().remove_connection(resource_id)
+    if not removed:
+        return 404, json.dumps({"error": f"Connection {resource_id!r} not found"})
+    return 200, json.dumps({"status": "disconnected", "resource_id": resource_id})
+
+
+# ---------------------------------------------------------------------------
 # Connection handler
 # ---------------------------------------------------------------------------
 
@@ -751,7 +854,9 @@ async def _handle_connection(
                       "/feed", "/feed.html",
                       "/directory", "/directory.html",
                       "/legal", "/legal.html",
-                      "/posts", "/posts/create", "/posts/view"):
+                      "/posts", "/posts/create", "/posts/view",
+                      "/aim", "/aim.html",
+                      "/connections", "/connections.html"):
             status, resp_body, ct = _serve_static(path)
             _http_response(writer, status, resp_body, ct)
 
@@ -798,19 +903,19 @@ async def _handle_connection(
         # ── Content Layer API (PUBLISH / LIST / READ) ──────────────────
         elif path == "/api/content/posts":
             if method == "GET":
-                status, resp_body = await _handle_content_list(qs)
+                status, resp_body = _handle_content_list(qs)
             elif method == "POST":
                 if not _check_rate_limit(peer_ip):
                     status, resp_body = 429, _RATE_LIMIT_EXCEEDED
                 else:
-                    status, resp_body = await _handle_content_post(body)
+                    status, resp_body = _handle_content_post(body)
             else:
                 status, resp_body = 405, _METHOD_NOT_ALLOWED
             _http_response(writer, status, resp_body)
         elif path.startswith("/api/content/posts/"):
             content_id = path[len("/api/content/posts/"):]
             if method == "GET":
-                status, resp_body = await _handle_content_read(content_id)
+                status, resp_body = _handle_content_get_by_id(content_id)
             else:
                 status, resp_body = 405, _METHOD_NOT_ALLOWED
             _http_response(writer, status, resp_body)
@@ -863,6 +968,38 @@ async def _handle_connection(
             content_id = path[len("/api/content/"):]
             if method == "GET":
                 status, resp_body = _handle_content_get_by_id(content_id)
+            else:
+                status, resp_body = 405, _METHOD_NOT_ALLOWED
+            _http_response(writer, status, resp_body)
+
+        # ── AI Brain API ────────────────────────────────────────────────
+        elif path in ("/api/ai/query", "/api/ai/think"):
+            if method in ("GET", "POST"):
+                if method == "POST" and not _check_rate_limit(peer_ip):
+                    status, resp_body = 429, _RATE_LIMIT_EXCEEDED
+                else:
+                    status, resp_body = await _handle_ai_query(qs, body, method)
+            else:
+                status, resp_body = 405, _METHOD_NOT_ALLOWED
+            _http_response(writer, status, resp_body)
+        elif path == "/api/ai/status":
+            status, resp_body = _handle_ai_status()
+            _http_response(writer, status, resp_body)
+        elif path == "/api/ai/history":
+            status, resp_body = _handle_ai_session_history(qs)
+            _http_response(writer, status, resp_body)
+
+        # ── Remote Connections API ──────────────────────────────────────
+        elif path == "/api/connections":
+            if method == "GET":
+                status, resp_body = _handle_connections_get()
+            elif method == "POST":
+                if not _check_rate_limit(peer_ip):
+                    status, resp_body = 429, _RATE_LIMIT_EXCEEDED
+                else:
+                    status, resp_body = _handle_connections_post(body)
+            elif method == "DELETE":
+                status, resp_body = _handle_connections_delete(qs)
             else:
                 status, resp_body = 405, _METHOD_NOT_ALLOWED
             _http_response(writer, status, resp_body)

@@ -24,7 +24,45 @@ from typing import Any
 from aim.node.base import BaseNode, _send_message, _recv_message
 from aim.protocol.message import AIMMessage, Intent, Status
 from aim.identity.ledger import LegacyLedger, EventKind, default_ledger
+from aim.identity.signature import CreatorSignature
 from aim.relay.registry import RelayRegistry, RelayRecord
+
+# ---------------------------------------------------------------------------
+# Custom event-kind strings (not yet in the main EventKind enum)
+# ---------------------------------------------------------------------------
+_EK_RELAY_PEER_CONNECTED  = "relay_peer_connected"
+_EK_RELAY_CONTENT_CACHED  = "relay_content_cached"
+_EK_RELAY_MSG_DROPPED     = "relay_msg_dropped"
+_EK_RELAY_MSG_FORWARDED   = "relay_msg_forwarded"
+
+
+# ---------------------------------------------------------------------------
+# Simple time-based LRU cache
+# ---------------------------------------------------------------------------
+
+class _LRUCache:
+    """Minimal time-aware LRU cache used by RelayNode's content cache."""
+
+    def __init__(self, maxsize: int = 256, ttl: float = 300.0) -> None:
+        self._maxsize = maxsize
+        self._ttl = ttl
+        self._store: dict[str, tuple[float, Any]] = {}  # key → (ts, value)
+
+    def set(self, key: str, value: Any) -> None:
+        if len(self._store) >= self._maxsize:
+            oldest = min(self._store, key=lambda k: self._store[k][0])
+            del self._store[oldest]
+        self._store[key] = (time.time(), value)
+
+    def get(self, key: str) -> Any | None:
+        entry = self._store.get(key)
+        if entry is None:
+            return None
+        ts, value = entry
+        if time.time() - ts > self._ttl:
+            del self._store[key]
+            return None
+        return value
 
 logger = logging.getLogger(__name__)
 
@@ -65,22 +103,46 @@ class RelayNode(BaseNode):
         self,
         *args: Any,
         relay_registry: RelayRegistry | None = None,
-        ledger: LegacyLedger | None = None,
+        relay_peers: list[tuple[str, int]] | None = None,
         enable_cache: bool = True,
         heartbeat_interval: float = _DEFAULT_HEARTBEAT_INTERVAL,
+        health_check_interval: float = 60.0,
+        content_cache_size: int = 256,
+        content_cache_ttl: float = 300.0,
+        ledger: LegacyLedger | None = None,
         **kwargs: Any,
     ) -> None:
+        caps = list(kwargs.pop("capabilities", None) or [])
+        if "relay" not in caps:
+            caps = ["relay"] + caps
+        kwargs["capabilities"] = caps
         super().__init__(*args, **kwargs)
+
         self._relay_registry: RelayRegistry = relay_registry or RelayRegistry.default()
-        self._ledger: LegacyLedger = ledger or default_ledger()
         self._enable_cache = enable_cache
         self._heartbeat_interval = heartbeat_interval
 
         # Response cache: cache_key → (timestamp, AIMMessage)
         self._cache: dict[str, tuple[float, AIMMessage]] = {}
 
-        # Background heartbeat task handle
+        # Background task handles
         self._heartbeat_task: asyncio.Task[None] | None = None
+        self._health_task: asyncio.Task[None] | None = None
+
+        # Extended peer-relay attributes
+        self._relay_peers: list[tuple[str, int]] = list(relay_peers or [])
+        self._relay_health: dict[tuple[str, int], float | None] = {
+            addr: None for addr in self._relay_peers
+        }
+        self._health_check_interval = health_check_interval
+        self._content_cache = _LRUCache(
+            maxsize=content_cache_size, ttl=content_cache_ttl
+        )
+        self._ledger: LegacyLedger = ledger or default_ledger()
+        self._sig = CreatorSignature(node_id=self.node_id)
+
+        # Routing table: receiver_id → (host, port)
+        self._route_table: dict[str, tuple[str, int]] = {}
 
         # Register this relay in the relay registry
         self._relay_registry.register(
@@ -99,9 +161,28 @@ class RelayNode(BaseNode):
     # ------------------------------------------------------------------
 
     def _register_relay_handlers(self) -> None:
+        """Register FORWARD, QUERY, TASK, DELEGATE, and ANNOUNCE handlers."""
         @self._handler.on(Intent.FORWARD)
         async def _on_forward(msg: AIMMessage) -> AIMMessage:
             return await self._handle_forward(msg)
+
+        for intent in (Intent.QUERY, Intent.TASK, Intent.DELEGATE):
+            def _make_handler(i: Intent):  # noqa: ANN001
+                async def _handler(msg: AIMMessage) -> AIMMessage:
+                    return await self._route_message(msg)
+                return _handler
+            self._handler.register(intent, _make_handler(intent))
+
+        @self._handler.on(Intent.ANNOUNCE)
+        async def _on_announce(msg: AIMMessage) -> None:
+            addr = msg.payload.get("addr")
+            if isinstance(addr, list) and len(addr) == 2 and msg.sender_id:
+                self._route_table[msg.sender_id] = (addr[0], addr[1])
+                logger.debug(
+                    "Relay %s learned route: %s → %s:%s",
+                    self.node_id[:8], msg.sender_id[:8], addr[0], addr[1],
+                )
+            return None
 
     async def _handle_forward(self, msg: AIMMessage) -> AIMMessage:
         """
@@ -185,35 +266,20 @@ class RelayNode(BaseNode):
                 correlation_id=msg.message_id,
                 result={"error": f"no response from {target_host}:{target_port}"},
                 status=Status.ERROR,
-        relay_peers: list[tuple[str, int]] | None = None,
-        health_check_interval: float = 60.0,
-        content_cache_size: int = 256,
-        content_cache_ttl: float = 300.0,
-        ledger: LegacyLedger | None = None,
-        **kwargs: Any,
-    ) -> None:
-        caps = list(kwargs.pop("capabilities", None) or [])
-        if "relay" not in caps:
-            caps = ["relay"] + caps
-        kwargs["capabilities"] = caps
-        super().__init__(*args, **kwargs)
+                sender_id=self.node_id,
+                receiver_id=msg.sender_id,
+            )
 
-        self._relay_peers: list[tuple[str, int]] = list(relay_peers or [])
-        self._relay_health: dict[tuple[str, int], float | None] = {
-            addr: None for addr in self._relay_peers
-        }
-        self._health_check_interval = health_check_interval
-        self._content_cache = _LRUCache(
-            maxsize=content_cache_size, ttl=content_cache_ttl
+        # Cache the successful response
+        if self._enable_cache:
+            self._cache_put(cache_key, response)
+
+        return AIMMessage.respond(
+            correlation_id=msg.message_id,
+            result={"relayed": True, "cached": False, "response": json.loads(response.to_json())},
+            sender_id=self.node_id,
+            receiver_id=msg.sender_id,
         )
-        self._ledger = ledger or default_ledger()
-        self._sig = CreatorSignature(node_id=self.node_id)
-        self._health_task: asyncio.Task[None] | None = None
-
-        # Routing table: receiver_id → (host, port)
-        self._route_table: dict[str, tuple[str, int]] = {}
-
-        self._register_relay_handlers()
 
     # ------------------------------------------------------------------
     # Relay peer management
@@ -257,30 +323,8 @@ class RelayNode(BaseNode):
         return self._content_cache.get(content_id)
 
     # ------------------------------------------------------------------
-    # Relay-specific protocol handlers
+    # Relay-specific routing
     # ------------------------------------------------------------------
-
-    def _register_relay_handlers(self) -> None:
-        """Register forwarding handlers for routable intents."""
-        for intent in (Intent.QUERY, Intent.TASK, Intent.DELEGATE):
-            # Capture intent in closure
-            def _make_handler(i: Intent):  # noqa: ANN001
-                async def _handler(msg: AIMMessage) -> AIMMessage:
-                    return await self._route_message(msg)
-                return _handler
-            self._handler.register(intent, _make_handler(intent))
-
-        @self._handler.on(Intent.ANNOUNCE)
-        async def _on_announce(msg: AIMMessage) -> None:
-            # Learn the sender's address for future routing
-            addr = msg.payload.get("addr")
-            if isinstance(addr, list) and len(addr) == 2 and msg.sender_id:
-                self._route_table[msg.sender_id] = (addr[0], addr[1])
-                logger.debug(
-                    "Relay %s learned route: %s → %s:%s",
-                    self.node_id[:8], msg.sender_id[:8], addr[0], addr[1],
-                )
-            return None
 
     async def _route_message(self, msg: AIMMessage) -> AIMMessage:
         """Route *msg* to its intended receiver or broadcast to peers."""
@@ -304,6 +348,10 @@ class RelayNode(BaseNode):
         return AIMMessage.respond(
             correlation_id=msg.message_id,
             result={"relayed": True, "cached": False, "response": json.loads(response.to_json())},
+            sender_id=self.node_id,
+            receiver_id=msg.sender_id,
+        )
+
         msg.ttl -= 1
 
         # Try the route table first
