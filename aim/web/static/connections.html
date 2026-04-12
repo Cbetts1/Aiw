@@ -296,11 +296,11 @@
     window.location.href = `/aim#node=${id}&host=${encodeURIComponent(host)}&port=${port}&name=${label}`;
   }
 
-  function showToast(msg, ms = 3000) {
+    def showToast(msg, durationMs = 3000) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), ms);
+    setTimeout(() => t.classList.remove('show'), durationMs);
   }
 
   function escHtml(s) {

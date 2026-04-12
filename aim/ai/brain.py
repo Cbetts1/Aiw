@@ -46,7 +46,7 @@ _KNOWLEDGE: list[tuple[str, str]] = [
      "that serve static pages, mesh nodes carry *intent* — they understand what is "
      "being asked and respond intelligently."),
     ("who created aim",
-     f"A.I.M. was founded by {__origin__} (Christopher Lee Betts). "
+     f"A.I.M. was founded by {__origin__}. "
      "Free forever. Never for sale. Never for profit."),
     ("what is aura",
      "The Aura Project is the stewarding organisation of A.I.M. It governs the "

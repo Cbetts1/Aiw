@@ -161,7 +161,7 @@ class RelayNode(BaseNode):
     # ------------------------------------------------------------------
 
     def _register_relay_handlers(self) -> None:
-        """Register FORWARD, QUERY, TASK, DELEGATE, and ANNOUNCE handlers."""
+        """Register protocol handlers: FORWARD (direct proxy), QUERY/TASK/DELEGATE (route), ANNOUNCE (learn routes)."""
         @self._handler.on(Intent.FORWARD)
         async def _on_forward(msg: AIMMessage) -> AIMMessage:
             return await self._handle_forward(msg)
@@ -340,17 +340,6 @@ class RelayNode(BaseNode):
                 sender_id=self.node_id,
                 receiver_id=msg.sender_id,
             )
-
-       # Store in cache
-        if self._enable_cache:
-            self._cache_put(cache_key, response)
-
-        return AIMMessage.respond(
-            correlation_id=msg.message_id,
-            result={"relayed": True, "cached": False, "response": json.loads(response.to_json())},
-            sender_id=self.node_id,
-            receiver_id=msg.sender_id,
-        )
 
         msg.ttl -= 1
 
