@@ -24,7 +24,45 @@ from typing import Any
 from aim.node.base import BaseNode, _send_message, _recv_message
 from aim.protocol.message import AIMMessage, Intent, Status
 from aim.identity.ledger import LegacyLedger, EventKind, default_ledger
+from aim.identity.signature import CreatorSignature
 from aim.relay.registry import RelayRegistry, RelayRecord
+
+# ---------------------------------------------------------------------------
+# Custom event-kind strings (not yet in the main EventKind enum)
+# ---------------------------------------------------------------------------
+_EK_RELAY_PEER_CONNECTED  = "relay_peer_connected"
+_EK_RELAY_CONTENT_CACHED  = "relay_content_cached"
+_EK_RELAY_MSG_DROPPED     = "relay_msg_dropped"
+_EK_RELAY_MSG_FORWARDED   = "relay_msg_forwarded"
+
+
+# ---------------------------------------------------------------------------
+# Simple time-based LRU cache
+# ---------------------------------------------------------------------------
+
+class _LRUCache:
+    """Minimal time-aware LRU cache used by RelayNode's content cache."""
+
+    def __init__(self, maxsize: int = 256, ttl: float = 300.0) -> None:
+        self._maxsize = maxsize
+        self._ttl = ttl
+        self._store: dict[str, tuple[float, Any]] = {}  # key → (ts, value)
+
+    def set(self, key: str, value: Any) -> None:
+        if len(self._store) >= self._maxsize:
+            oldest = min(self._store, key=lambda k: self._store[k][0])
+            del self._store[oldest]
+        self._store[key] = (time.time(), value)
+
+    def get(self, key: str) -> Any | None:
+        entry = self._store.get(key)
+        if entry is None:
+            return None
+        ts, value = entry
+        if time.time() - ts > self._ttl:
+            del self._store[key]
+            return None
+        return value
 
 logger = logging.getLogger(__name__)
 
@@ -65,22 +103,46 @@ class RelayNode(BaseNode):
         self,
         *args: Any,
         relay_registry: RelayRegistry | None = None,
-        ledger: LegacyLedger | None = None,
+        relay_peers: list[tuple[str, int]] | None = None,
         enable_cache: bool = True,
         heartbeat_interval: float = _DEFAULT_HEARTBEAT_INTERVAL,
+        health_check_interval: float = 60.0,
+        content_cache_size: int = 256,
+        content_cache_ttl: float = 300.0,
+        ledger: LegacyLedger | None = None,
         **kwargs: Any,
     ) -> None:
+        caps = list(kwargs.pop("capabilities", None) or [])
+        if "relay" not in caps:
+            caps = ["relay"] + caps
+        kwargs["capabilities"] = caps
         super().__init__(*args, **kwargs)
+
         self._relay_registry: RelayRegistry = relay_registry or RelayRegistry.default()
-        self._ledger: LegacyLedger = ledger or default_ledger()
         self._enable_cache = enable_cache
         self._heartbeat_interval = heartbeat_interval
 
         # Response cache: cache_key → (timestamp, AIMMessage)
         self._cache: dict[str, tuple[float, AIMMessage]] = {}
 
-        # Background heartbeat task handle
+        # Background task handles
         self._heartbeat_task: asyncio.Task[None] | None = None
+        self._health_task: asyncio.Task[None] | None = None
+
+        # Extended peer-relay attributes
+        self._relay_peers: list[tuple[str, int]] = list(relay_peers or [])
+        self._relay_health: dict[tuple[str, int], float | None] = {
+            addr: None for addr in self._relay_peers
+        }
+        self._health_check_interval = health_check_interval
+        self._content_cache = _LRUCache(
+            maxsize=content_cache_size, ttl=content_cache_ttl
+        )
+        self._ledger: LegacyLedger = ledger or default_ledger()
+        self._sig = CreatorSignature(node_id=self.node_id)
+
+        # Routing table: receiver_id → (host, port)
+        self._route_table: dict[str, tuple[str, int]] = {}
 
         # Register this relay in the relay registry
         self._relay_registry.register(
@@ -99,9 +161,28 @@ class RelayNode(BaseNode):
     # ------------------------------------------------------------------
 
     def _register_relay_handlers(self) -> None:
+        """Register protocol handlers: FORWARD (direct proxy), QUERY/TASK/DELEGATE (route), ANNOUNCE (learn routes)."""
         @self._handler.on(Intent.FORWARD)
         async def _on_forward(msg: AIMMessage) -> AIMMessage:
             return await self._handle_forward(msg)
+
+        for intent in (Intent.QUERY, Intent.TASK, Intent.DELEGATE):
+            def _make_handler(i: Intent):  # noqa: ANN001
+                async def _handler(msg: AIMMessage) -> AIMMessage:
+                    return await self._route_message(msg)
+                return _handler
+            self._handler.register(intent, _make_handler(intent))
+
+        @self._handler.on(Intent.ANNOUNCE)
+        async def _on_announce(msg: AIMMessage) -> None:
+            addr = msg.payload.get("addr")
+            if isinstance(addr, list) and len(addr) == 2 and msg.sender_id:
+                self._route_table[msg.sender_id] = (addr[0], addr[1])
+                logger.debug(
+                    "Relay %s learned route: %s → %s:%s",
+                    self.node_id[:8], msg.sender_id[:8], addr[0], addr[1],
+                )
+            return None
 
     async def _handle_forward(self, msg: AIMMessage) -> AIMMessage:
         """
@@ -189,13 +270,106 @@ class RelayNode(BaseNode):
                 receiver_id=msg.sender_id,
             )
 
-        # Store in cache
+        # Cache the successful response
         if self._enable_cache:
             self._cache_put(cache_key, response)
 
         return AIMMessage.respond(
             correlation_id=msg.message_id,
             result={"relayed": True, "cached": False, "response": json.loads(response.to_json())},
+            sender_id=self.node_id,
+            receiver_id=msg.sender_id,
+        )
+
+    # ------------------------------------------------------------------
+    # Relay peer management
+    # ------------------------------------------------------------------
+
+    def add_relay_peer(self, host: str, port: int) -> None:
+        """Register a new relay peer at runtime."""
+        addr = (host, port)
+        if addr not in self._relay_peers:
+            self._relay_peers.append(addr)
+            self._relay_health[addr] = None
+            self._ledger.record(
+                _EK_RELAY_PEER_CONNECTED, self.node_id,
+                payload={"peer_host": host, "peer_port": port},
+                signature=self._sig,
+            )
+
+    def healthy_relay_peers(self) -> list[tuple[str, int]]:
+        """Return peer relays with a recent heartbeat."""
+        now = time.time()
+        return [
+            addr for addr, last_ok in self._relay_health.items()
+            if last_ok is not None and now - last_ok < self._health_check_interval * 3
+        ]
+
+    # ------------------------------------------------------------------
+    # Content cache helpers (used by ContentLayer integration)
+    # ------------------------------------------------------------------
+
+    def cache_put(self, content_id: str, item: Any) -> None:
+        """Store a content item in the relay's LRU cache."""
+        self._content_cache.set(content_id, item)
+        self._ledger.record(
+            _EK_RELAY_CONTENT_CACHED, self.node_id,
+            payload={"content_id": content_id},
+            signature=self._sig,
+        )
+
+    def cache_get(self, content_id: str) -> Any | None:
+        """Retrieve a cached content item, or None on miss / expiry."""
+        return self._content_cache.get(content_id)
+
+    # ------------------------------------------------------------------
+    # Relay-specific routing
+    # ------------------------------------------------------------------
+
+    async def _route_message(self, msg: AIMMessage) -> AIMMessage:
+        """Route *msg* to its intended receiver or broadcast to peers."""
+        if msg.ttl <= 0:
+            self._ledger.record(
+                _EK_RELAY_MSG_DROPPED, self.node_id,
+                payload={"reason": "ttl_expired", "message_id": msg.message_id},
+                signature=self._sig,
+            )
+            return AIMMessage.respond(
+                correlation_id=msg.message_id,
+                result={"error": "ttl_expired"},
+                sender_id=self.node_id,
+                receiver_id=msg.sender_id,
+            )
+
+        msg.ttl -= 1
+
+        # Try the route table first
+        receiver_id = msg.receiver_id
+        if receiver_id and receiver_id in self._route_table:
+            host, port = self._route_table[receiver_id]
+            response = await self.send(msg, host, port)
+            if response is not None:
+                self._ledger.record(
+                    _EK_RELAY_MSG_FORWARDED, self.node_id,
+                    payload={
+                        "to_host": host, "to_port": port,
+                        "intent": msg.intent.value,
+                        "message_id": msg.message_id,
+                    },
+                    signature=self._sig,
+                )
+                return response
+
+        # Fan out to healthy peer relays
+        for addr in self.healthy_relay_peers():
+            response = await self.send(msg, addr[0], addr[1])
+            if response is not None:
+                return response
+
+        # No route found
+        return AIMMessage.respond(
+            correlation_id=msg.message_id,
+            result={"error": "no_route_to_receiver"},
             sender_id=self.node_id,
             receiver_id=msg.sender_id,
         )

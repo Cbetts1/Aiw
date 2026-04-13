@@ -742,6 +742,21 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     # --- mesh subcommand ---
+    mesh_p = sub.add_parser("mesh", help="AIM mesh network commands")
+    mesh_sub = mesh_p.add_subparsers(dest="mesh_command")
+
+    mesh_up_p = mesh_sub.add_parser("up", help="Bring up a full local mesh stack")
+    mesh_up_p.add_argument("--host", default="127.0.0.1")
+    mesh_up_p.add_argument("--node-port",    type=int, default=7700, dest="node_port")
+    mesh_up_p.add_argument("--gateway-port", type=int, default=7900, dest="gateway_port")
+    mesh_up_p.add_argument("--relay-port",   type=int, default=7600, dest="relay_port")
+    mesh_up_p.add_argument("--with-gateway", action="store_true", dest="with_gateway")
+    mesh_up_p.add_argument("--with-relay",   action="store_true", dest="with_relay")
+
+    mesh_join_p = mesh_sub.add_parser("join", help="Join an existing mesh via a gateway")
+    mesh_join_p.add_argument("--gateway", required=True, help="Gateway host:port (e.g. 1.2.3.4:7900)")
+    mesh_join_p.add_argument("--host", default="127.0.0.1")
+    mesh_join_p.add_argument("--node-port", type=int, default=7700, dest="node_port")
     mesh_p = sub.add_parser("mesh", help="AIM mesh orchestration commands")
     mesh_sub = mesh_p.add_subparsers(dest="mesh_command")
 
@@ -767,6 +782,10 @@ def _build_parser() -> argparse.ArgumentParser:
     mesh_status_p = mesh_sub.add_parser("status", help="Check mesh node status")
     mesh_status_p.add_argument("--host", default="127.0.0.1")
     mesh_status_p.add_argument("--port", type=int, default=7700)
+
+    mesh_peers_p = mesh_sub.add_parser("peers", help="List relay peers")
+    mesh_peers_p.add_argument("--host", default="127.0.0.1")
+    mesh_peers_p.add_argument("--port", type=int, default=7600)
 
     mesh_peers_p = mesh_sub.add_parser("peers", help="List relay peers in the mesh")
     mesh_peers_p.add_argument("--host", default="127.0.0.1")
