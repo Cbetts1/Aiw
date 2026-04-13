@@ -474,6 +474,94 @@ async def _cmd_mesh_join(args: argparse.Namespace) -> None:
         ledger.record(EventKind.NODE_STOPPED, node.node_id)
 
 
+async def _cmd_cc_register(args: argparse.Namespace) -> None:
+    from aim.command_center.identity import VirtualDeviceIdentity
+    from aim.command_center.client import CommandCenterClient
+
+    caps = args.capabilities.split(",") if getattr(args, "capabilities", "") else []
+    ident = VirtualDeviceIdentity.new(
+        name=args.name,
+        repo_url=args.repo_url,
+        capabilities=caps,
+    )
+    client = CommandCenterClient(
+        cc_host=args.cc_host,
+        cc_port=args.cc_port,
+        device_identity=ident,
+    )
+    print(f"\n{'='*60}")
+    print(f"  AIM Command Center — Register")
+    print(f"  Device : {ident}")
+    print(f"  CC     : {args.cc_host}:{args.cc_port}")
+    print(f"  Valid  : {ident.verify()}")
+    print(f"{'='*60}\n")
+    try:
+        await asyncio.wait_for(client.connect(), timeout=5.0)
+        print("Connected to Command Center successfully.")
+        await client.disconnect()
+    except Exception as exc:
+        print(f"Could not connect to CC: {exc}", file=sys.stderr)
+
+
+async def _cmd_cc_status(args: argparse.Namespace) -> None:
+    from aim.command_center.identity import VirtualDeviceIdentity
+    from aim.command_center.client import CommandCenterClient
+    from aim.health.reporter import HealthReporter
+
+    ident = VirtualDeviceIdentity.new(name="cli-status", repo_url="")
+    client = CommandCenterClient(
+        cc_host=args.cc_host,
+        cc_port=args.cc_port,
+        device_identity=ident,
+    )
+    reporter = HealthReporter(node_id=ident.device_id)
+    snap = reporter.snapshot()
+    print(f"\n{'='*60}")
+    print(f"  AIM Command Center — Status")
+    print(f"  CC          : {args.cc_host}:{args.cc_port}")
+    print(f"  Connected   : {client.is_connected}")
+    print(f"  Node health : {snap.status}")
+    print(f"{'='*60}\n")
+    print(snap.to_json())
+
+
+def _cmd_health(args: argparse.Namespace) -> None:
+    from aim.health.reporter import HealthReporter
+    import uuid as _uuid
+    node_id = str(_uuid.uuid4())
+    reporter = HealthReporter(node_id=node_id)
+    snap = reporter.snapshot()
+    print(snap.to_json())
+
+
+def _cmd_build_module(args: argparse.Namespace) -> None:
+    from aim.builder.engine import BuilderEngine, ModuleSpec
+    caps = args.capabilities.split(",") if getattr(args, "capabilities", "") else []
+    spec = ModuleSpec(
+        name=args.name,
+        description=getattr(args, "description", ""),
+        capabilities=caps,
+        template=getattr(args, "template", "agent_node"),
+    )
+    engine = BuilderEngine()
+    result = engine.build_module(spec)
+    if result.success:
+        print(f"Module '{args.name}' built successfully.")
+        for f in result.files_created:
+            print(f"  Created: {f}")
+    else:
+        print(f"Build failed:", file=sys.stderr)
+        for e in result.errors:
+            print(f"  {e}", file=sys.stderr)
+
+
+def _cmd_build_list(args: argparse.Namespace) -> None:
+    from aim.builder.engine import BuilderEngine
+    engine = BuilderEngine()
+    modules = engine.list_modules()
+    print(json.dumps({"modules": modules}, indent=2))
+
+
 async def _cmd_mesh_status(args: argparse.Namespace) -> None:
     msg = AIMMessage.heartbeat(sender_id="cli")
     reader, writer = await asyncio.open_connection(args.host, args.port)
