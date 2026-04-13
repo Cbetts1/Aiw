@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A.I.M. — Publish to the World Wide Web</title>
+  <meta name="description" content="Register your site on the AIM mesh and bridge it to the traditional World Wide Web — no external services required." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #060a0f;
+      --surface:  #0d1117;
+      --surface2: #161b22;
+      --border:   #21262d;
+      --accent:   #58a6ff;
+      --accent2:  #3fb950;
+      --gold:     #e3b341;
+      --danger:   #f85149;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --radius:   10px;
+      --font:     'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.6; }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(6,10,15,.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 54px;
+    }
+    .nav-logo { font-size: 1.15rem; font-weight: 700; color: var(--accent); letter-spacing: 2px; text-decoration: none; }
+    .nav-links { display: flex; gap: 24px; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color .15s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    .page-header { margin-bottom: 36px; }
+    .page-header .tag { font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+    .page-header h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 800; margin-bottom: 8px; }
+    .page-header .sub { color: var(--muted); font-size: 1.05rem; }
+
+    /* ── FORM ── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 28px; }
+    .card h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 18px; color: var(--text); }
+
+    .field { margin-bottom: 18px; }
+    .field label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+    .field input, .field select, .field textarea {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-family: var(--font);
+      font-size: 0.95rem; padding: 10px 14px; outline: none;
+      transition: border-color .15s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+    .field textarea { resize: vertical; min-height: 80px; }
+    .field select option { background: var(--surface2); }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent); color: #060a0f; border: none; border-radius: 6px;
+      padding: 11px 24px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+      transition: opacity .15s;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── FEEDBACK ── */
+    #feedback { margin-top: 20px; display: none; }
+    .notice {
+      border-radius: 8px; padding: 14px 18px; font-size: 0.9rem; line-height: 1.5;
+    }
+    .notice.ok  { background: rgba(63,185,80,.12); border: 1px solid rgba(63,185,80,.35); color: var(--accent2); }
+    .notice.err { background: rgba(248,81,73,.12); border: 1px solid rgba(248,81,73,.35); color: var(--danger); }
+
+    /* ── CLI TIP ── */
+    .cli-tip { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; }
+    .cli-tip h3 { font-size: 1rem; font-weight: 700; margin-bottom: 10px; }
+    .cli-tip code { display: block; background: var(--surface2); border-radius: 6px; padding: 12px 16px; font-size: 0.85rem; color: var(--accent); white-space: pre; overflow-x: auto; margin-bottom: 8px; }
+    .cli-tip p { font-size: 0.85rem; color: var(--muted); }
+
+    footer { text-align: center; padding: 40px 24px; color: var(--muted); font-size: 0.8rem; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-logo" href="/">A.I.M.</a>
+    <ul class="nav-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="/directory">Directory</a></li>
+      <li><a href="/posts">Posts</a></li>
+      <li><a href="/publish-to-www" class="active">Publish to WWW</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+
+    <div class="page-header">
+      <div class="tag">AIM → WWW Bridge</div>
+      <h1>Publish to the World Wide Web</h1>
+      <p class="sub">
+        Register your site on the AIM mesh and bridge it to the traditional web —
+        fully self-contained, no external services required.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Register Your Site</h2>
+      <form id="wwwForm">
+
+        <div class="field">
+          <label for="name">Site Name *</label>
+          <input type="text" id="name" maxlength="120" placeholder="My Awesome Site" required />
+        </div>
+
+        <div class="field">
+          <label for="url">WWW URL *</label>
+          <input type="url" id="url" placeholder="https://example.com" required />
+        </div>
+
+        <div class="field">
+          <label for="description">Description</label>
+          <textarea id="description" maxlength="500" placeholder="A brief description of what this site is about…"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="category">Category</label>
+          <select id="category">
+            <option value="website">Website</option>
+            <option value="app">App</option>
+            <option value="tool">Tool</option>
+            <option value="resource">Resource</option>
+            <option value="service">Service</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="creator">Creator / Handle</label>
+          <input type="text" id="creator" maxlength="60" placeholder="anonymous" />
+        </div>
+
+        <button type="submit" class="btn-primary" id="submitBtn">
+          ⬆ Publish to AIM + WWW
+        </button>
+      </form>
+
+      <div id="feedback"></div>
+    </div>
+
+    <div class="cli-tip">
+      <h3>Generate a Full Static Snapshot</h3>
+      <code>aim www publish --out ./my-www-site --aim-url http://localhost:8080</code>
+      <p>
+        Run this command to export all AIM pages and live content into a plain HTML
+        folder you can deploy to GitHub Pages, nginx, or any static host.
+      </p>
+      <br/>
+      <code>aim www start --port 80</code>
+      <p>Start the AIM web bridge on standard HTTP port 80 (may require root/sudo on some systems).</p>
+    </div>
+
+  </div>
+
+  <footer>A.I.M. — Artificial Intelligence Mesh · Free forever · Never for sale</footer>
+
+  <script>
+    const form     = document.getElementById('wwwForm');
+    const feedback = document.getElementById('feedback');
+    const submitBtn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      feedback.style.display = 'none';
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Publishing…';
+
+      const payload = {
+        name:        document.getElementById('name').value.trim(),
+        url:         document.getElementById('url').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        category:    document.getElementById('category').value,
+        creator:     document.getElementById('creator').value.trim() || 'anonymous',
+      };
+
+      try {
+        const resp = await fetch('/api/www/publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await resp.json();
+
+        if (resp.ok) {
+          feedback.innerHTML = `<div class="notice ok">
+            <strong>Published!</strong> "${escHtml(payload.name)}" is now registered in the AIM mesh
+            and will appear in WWW snapshots.<br/>
+            <small>${escHtml(data.message || '')}</small>
+          </div>`;
+          form.reset();
+        } else {
+          feedback.innerHTML = `<div class="notice err"><strong>Error:</strong> ${escHtml(data.error || 'Unknown error')}</div>`;
+        }
+      } catch (err) {
+        feedback.innerHTML = `<div class="notice err"><strong>Network error:</strong> ${escHtml(String(err))}</div>`;
+      } finally {
+        feedback.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = '⬆ Publish to AIM + WWW';
+      }
+    });
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+
+</body>
+</html>
