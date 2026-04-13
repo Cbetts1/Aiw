@@ -34,6 +34,9 @@ class Intent(str, Enum):
     MEMORY_GET  = "memory_get"  # read from shared cross-node memory
     SPAWN       = "spawn"       # request creation of a child node
     FORWARD     = "forward"     # relay a message through an intermediate hop
+    PUBLISH     = "publish"     # publish content to the mesh
+    READ        = "read"        # read content by identifier
+    LIST        = "list"        # list available content
 
 
 class Status(str, Enum):

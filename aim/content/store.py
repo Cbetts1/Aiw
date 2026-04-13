@@ -212,6 +212,29 @@ class ContentStore:
 
         return results[offset : offset + limit]
 
+    def count_matching(
+        self,
+        author: str | None = None,
+        tag: str | None = None,
+        visibility: str | None = None,
+        content_type: str | None = None,
+    ) -> int:
+        """Return the number of items matching the given filters."""
+        with self._lock:
+            ordered = list(self._items.values())
+        total = 0
+        for item in ordered:
+            if author is not None and item.author != author:
+                continue
+            if tag is not None and tag not in item.tags:
+                continue
+            if visibility is not None and item.visibility != visibility:
+                continue
+            if content_type is not None and item.content_type != content_type:
+                continue
+            total += 1
+        return total
+
     def count(self) -> int:
         with self._lock:
             return len(self._items)

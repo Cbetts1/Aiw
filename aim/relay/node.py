@@ -475,32 +475,6 @@ class RelayNode(BaseNode):
                 "Relay %s heartbeat FAILED → %s (%s:%s)",
                 self.node_id[:8], record.relay_id[:8], record.host, record.port,
             )
-    # Health-check loop
-    # ------------------------------------------------------------------
-
-    async def _health_check_loop(self) -> None:
-        """Periodically heartbeat all configured relay peers."""
-        while self._running:
-            for addr in list(self._relay_peers):
-                try:
-                    hb = AIMMessage.heartbeat(sender_id=self.node_id)
-                    response = await self.send(hb, addr[0], addr[1], timeout=5.0)
-                    if response is not None:
-                        self._relay_health[addr] = time.time()
-                    else:
-                        self._relay_health[addr] = None
-                        logger.warning(
-                            "Relay %s: peer %s:%s unresponsive",
-                            self.node_id[:8], addr[0], addr[1],
-                        )
-                except Exception as exc:
-                    self._relay_health[addr] = None
-                    logger.warning(
-                        "Relay %s: heartbeat to %s:%s failed — %s",
-                        self.node_id[:8], addr[0], addr[1], exc,
-                    )
-            await asyncio.sleep(self._health_check_interval)
-
     # ------------------------------------------------------------------
     # Lifecycle overrides
     # ------------------------------------------------------------------

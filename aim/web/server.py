@@ -24,6 +24,7 @@ POST /api/dns/register            Register a DNS hostname as ANS record → JSON
 POST /api/content                 Publish a new content item (PUBLISH intent) → JSON
 GET  /api/content                 List content items with optional filters (LIST intent) → JSON
 GET  /api/content/<id>            Read a single content item by ID (READ intent) → JSON
+POST /api/www/publish             Register a site on AIM mesh and bridge it to the WWW → JSON
 
 All responses include CORS and security headers.
 """
@@ -669,7 +670,7 @@ def _get_content_store():
     return default_store(persist_path=str(_CONTENT_FILE))
 
 
-def _handle_content_post(body: bytes) -> tuple[int, str]:
+def _handle_content_post_direct(body: bytes) -> tuple[int, str]:
     """Publish a new content item (maps to PUBLISH intent)."""
     try:
         data: dict[str, Any] = json.loads(body.decode("utf-8"))
@@ -702,7 +703,7 @@ def _handle_content_get_by_id(content_id: str) -> tuple[int, str]:
     return 200, json.dumps({"item": item.to_dict()})
 
 
-def _handle_content_list(qs: dict[str, str]) -> tuple[int, str]:
+def _handle_content_list_direct(qs: dict[str, str]) -> tuple[int, str]:
     """List content items with optional filters (maps to LIST intent)."""
     store = _get_content_store()
     try:
@@ -955,12 +956,12 @@ async def _handle_connection(
         # ── Content API ────────────────────────────────────────────────
         elif path == "/api/content":
             if method == "GET":
-                status, resp_body = _handle_content_list(qs)
+                status, resp_body = _handle_content_list_direct(qs)
             elif method == "POST":
                 if not _check_rate_limit(peer_ip):
                     status, resp_body = 429, _RATE_LIMIT_EXCEEDED
                 else:
-                    status, resp_body = _handle_content_post(body)
+                    status, resp_body = _handle_content_post_direct(body)
             else:
                 status, resp_body = 405, _METHOD_NOT_ALLOWED
             _http_response(writer, status, resp_body)
