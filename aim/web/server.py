@@ -74,7 +74,13 @@ _CONTENT_FILE = _DATA_DIR / "content.jsonl"
 # Ensure data directory and files exist at import time
 _DATA_DIR.mkdir(parents=True, exist_ok=True)
 if not _DIR_FILE.exists():
-    _DIR_FILE.write_text("[]")
+    # Seed from the bundled default so the directory is not empty on first run
+    _BUNDLED_DIR = Path(__file__).parent / "data" / "directory.json"
+    if _BUNDLED_DIR.exists():
+        import shutil as _shutil
+        _shutil.copy2(_BUNDLED_DIR, _DIR_FILE)
+    else:
+        _DIR_FILE.write_text("[]")
 if not _POSTS_FILE.exists():
     _POSTS_FILE.write_text("[]")
 

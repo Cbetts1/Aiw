@@ -1,7 +1,7 @@
 """
-AIM City — role definitions, city-specific intents, and ledger event kinds.
+AIM City — role definitions, AI World intents, and ledger event kinds.
 
-Every bot and citizen in the city carries an explicit role so that the
+Every bot and entity in the AI World carries an explicit role so that the
 Governor can route tasks correctly and Protection Agents can audit
 membership quickly.
 """
@@ -12,7 +12,7 @@ from enum import Enum
 
 
 class CityRole(str, Enum):
-    """The recognised roles within an AIM city."""
+    """The recognised roles within the AIM World."""
     GOVERNOR  = "governor"
     PROTECTOR = "protector"
     BUILDER   = "builder"
@@ -22,7 +22,7 @@ class CityRole(str, Enum):
 
 
 class CityIntent(str, Enum):
-    """City-level intents that extend the core AIM Intent taxonomy."""
+    """AI World intents that extend the core AIM Intent taxonomy."""
     PROTECT       = "protect"
     BUILD         = "build"
     EDUCATE       = "educate"
@@ -36,7 +36,7 @@ class CityIntent(str, Enum):
 
 
 class CityEventKind(str, Enum):
-    """Ledger event kinds used by city bots."""
+    """Ledger event kinds used by AI World bots."""
     CITIZEN_JOINED     = "citizen_joined"
     CITIZEN_LEFT       = "citizen_left"
     BOT_DEPLOYED       = "bot_deployed"

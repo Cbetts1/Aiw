@@ -54,8 +54,14 @@ class CreatorSignature:
 
     def _compute_digest(self) -> str:
         payload = f"{self.creator}:{self.mesh}:{self.epoch}:{self.node_id}:{self.issued_at}"
-        # The HMAC key is derived from the creator + mesh names so that any
-        # node can verify a peer's signature without a shared secret.
+        # The HMAC key is derived from the well-known creator + mesh names.
+        # This provides tamper-detection for the chain-of-custody trace (any
+        # peer can re-derive and compare the digest), but it does NOT provide
+        # cryptographic access control: because the key is publicly disclosed
+        # in the source code, any party can compute a conformant digest.
+        # In this prototype the goal is traceability, not authentication.
+        # A future production deployment should replace this with asymmetric
+        # signatures (Ed25519 / ECDSA) where only the private key can sign.
         key = f"{ORIGIN_CREATOR}/{AIM_MESH_NAME}".encode()
         return hmac.new(key, payload.encode(), hashlib.sha256).hexdigest()
 

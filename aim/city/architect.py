@@ -1,11 +1,11 @@
 """
-ArchitectBot — city planning and topology design for the AIM mesh.
+ArchitectBot — world topology planning and design for the AIM mesh.
 
 Responsibilities:
-- Design and document city topology blueprints
+- Design and document AI World topology blueprints
 - Recommend port assignments and node placements
 - Analyse the registry for capability gaps
-- Maintain a versioned catalogue of desired city structure
+- Maintain a versioned catalogue of desired world structure
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ _REQUIRED_CAPABILITIES = ["governor", "protect", "build", "educate", "design"]
 
 class ArchitectBot(AgentNode):
     """
-    An Architect Bot for the AIM city.
+    An Architect Bot for the AIM World.
 
     Parameters
     ----------
@@ -56,9 +56,9 @@ class ArchitectBot(AgentNode):
         self._sig        = CreatorSignature(node_id=self.node_id)
         self._blueprints: list[dict[str, Any]] = []
 
-        self.engine.add_rule("design",    "I am the Architect Bot. I plan and design the topology of the AIM city.")
+        self.engine.add_rule("design",    "I am the Architect Bot. I plan and design the topology of the AIM World.")
         self.engine.add_rule("blueprint", "Blueprints describe the desired node layout, roles, ports, and connections.")
-        self.engine.add_rule("topology",  "City topology shows all active nodes, their roles, and their connections.")
+        self.engine.add_rule("topology",  "AI World topology shows all active nodes, their roles, and their connections.")
         self.engine.add_rule("plan",      "I analyse the current registry and recommend capacity improvements.")
 
         self.register_task("create_blueprint",  self._task_create_blueprint)

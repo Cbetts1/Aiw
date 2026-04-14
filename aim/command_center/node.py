@@ -16,10 +16,9 @@ from typing import Any
 from aim.node.agent import AgentNode
 from aim.command_center.identity import VirtualDeviceIdentity
 from aim.command_center.client import CommandCenterClient
+from aim.identity.signature import ORIGIN_CREATOR
 
 logger = logging.getLogger(__name__)
-
-ORIGIN_CREATOR = "Cbetts1"
 
 
 class CommandCenterNode(AgentNode):

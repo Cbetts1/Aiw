@@ -1,0 +1,33 @@
+# AIM Node — systemd service unit
+#
+# Manages a standalone AIM node server (`aim node start`).
+#
+# Installation:
+#   sudo cp aim-node.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now aim-node
+
+[Unit]
+Description=AIM Node — virtual node in the Artificial Intelligence Mesh
+Documentation=https://github.com/Cbetts1/Aiw
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=aim
+Group=aim
+
+# Adjust host/port as needed
+ExecStart=/usr/bin/python3 -m aim node start --host 0.0.0.0 --port 7700
+
+Restart=on-failure
+RestartSec=5s
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

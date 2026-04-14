@@ -250,6 +250,29 @@ digest derived from the origin creator, mesh name, and a unique node nonce.
 All events are recorded in an append-only `LegacyLedger` that can persist
 to disk.
 
+> **Note on CreatorSignature security:** The HMAC key used for digest
+> computation is a well-known public constant (`"Cbetts1/AIM"`).  The
+> signature is therefore a *tamper-detection chain-of-custody trace*, not a
+> cryptographic authentication mechanism — any party who reads the source
+> code can produce a conformant digest.  A future production release will
+> replace this with asymmetric signatures (Ed25519 / ECDSA).
+
+---
+
+## Built-in AI Capability
+
+The built-in AI shipped with this prototype (`aim/ai/brain.py`) uses
+**keyword-matching** over a static knowledge table, not a machine-learning
+model.  It is intentionally lightweight so that AIM runs on any hardware
+(Termux, Raspberry Pi, old laptops) with zero external dependencies.
+
+The architecture is designed to be *model-agnostic*: a production deployment
+can replace `AIBrain._local_reason()` with any LLM backend, and nodes can
+forward queries to remote AIM nodes that host real models via the
+`/api/ai/query` endpoint.  The current implementation answers questions about
+the AIM mesh itself and forwards unrecognised queries to a configured remote
+node when one is available.
+
 ---
 
 ## Quick Start

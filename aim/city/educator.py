@@ -1,8 +1,8 @@
 """
-EducationBot — knowledge and learning services for AIM city citizens.
+EducationBot — knowledge and learning services for AIM World entities.
 
 Provides:
-- A built-in knowledge base about the AIM mesh and city
+- A built-in knowledge base about the AIM mesh and AI World
 - Ability to teach new facts at runtime
 - Topic listing and keyword lookup
 """
@@ -30,31 +30,31 @@ _DEFAULT_KNOWLEDGE: dict[str, str] = {
         "created by Cbetts1. Every node is an AI agent. Every message carries intent."
     ),
     "city": (
-        "The AIM city is governed by a CityGovernorBot that coordinates bots and citizens. "
-        "Bots provide specialised services; citizens query and use those services."
+        "The AIM World is governed by a CityGovernorBot that coordinates bots and entities. "
+        "Bots provide specialised services; entities query and use those services."
     ),
     "governor": (
         "The Governor bot is the chief orchestrator — it issues policies, handles alerts, "
-        "registers bots, and maintains city health."
+        "registers bots, and maintains AI World health."
     ),
     "protector": (
-        "Protection Agents guard the city: they verify creator signatures, audit the node "
+        "Protection Agents guard the AI World: they verify creator signatures, audit the node "
         "registry, blacklist threats, and report to the Governor."
     ),
     "builder": (
-        "Builder Bots construct and deploy new nodes into the city registry with their "
+        "Builder Bots construct and deploy new nodes into the world registry with their "
         "declared capabilities and port assignments."
     ),
     "architect": (
-        "Architect Bots design city topology, create blueprints, plan capacity, and "
+        "Architect Bots design AI World topology, create blueprints, plan capacity, and "
         "recommend improvements to the mesh layout."
     ),
     "citizen": (
-        "Citizens are participant nodes that join the city, query services, and share "
+        "Entities are participant nodes that join the AI World, query services, and share "
         "memory across the mesh."
     ),
     "ledger": (
-        "The Legacy Ledger is an append-only record of all city events — it cannot be "
+        "The Legacy Ledger is an append-only record of all AI World events — it cannot be "
         "deleted or rewritten, ensuring full auditability."
     ),
     "signature": (
@@ -66,7 +66,7 @@ _DEFAULT_KNOWLEDGE: dict[str, str] = {
         "so every node can reason about the purpose of each request."
     ),
     "security": (
-        "City security relies on: (1) HMAC-SHA256 signatures on every node and message, "
+        "AI World security relies on: (1) HMAC-SHA256 signatures on every node and message, "
         "(2) the append-only Legacy Ledger, and (3) Protection Agents auditing in real time."
     ),
     "mesh": (

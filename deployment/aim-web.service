@@ -1,0 +1,40 @@
+# AIM Web Bridge — systemd service unit
+#
+# Manages the AIM HTTP/browser gateway (`aim web start`).
+#
+# Installation:
+#   sudo cp aim-web.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now aim-web
+
+[Unit]
+Description=AIM Web Bridge — HTTP gateway for the Artificial Intelligence Mesh
+Documentation=https://github.com/Cbetts1/Aiw
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Run as a dedicated non-root user for security.
+# Create with: sudo useradd --system --no-create-home aim
+User=aim
+Group=aim
+
+# Adjust to match your Python environment / virtualenv
+ExecStart=/usr/bin/python3 -m aim web start --host 0.0.0.0 --port 8080
+
+# Store persistent data outside the package tree
+Environment="AIM_DATA_DIR=/var/lib/aim"
+
+Restart=on-failure
+RestartSec=5s
+
+# Harden the service
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/aim
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

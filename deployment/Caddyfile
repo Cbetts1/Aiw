@@ -1,0 +1,30 @@
+# AIM Web Bridge — Caddyfile
+#
+# Reverse-proxies HTTPS traffic to the local AIM web bridge (default port
+# 8080).  Caddy handles certificate provisioning automatically via ACME /
+# Let's Encrypt.
+#
+# Usage:
+#   1. Replace `aim.example.com` with your domain.
+#   2. Install Caddy: https://caddyserver.com/docs/install
+#   3. Run: caddy run --config Caddyfile
+
+aim.example.com {
+    # Forward all requests to the local AIM web bridge
+    reverse_proxy localhost:8080
+
+    # Enable gzip compression for JSON and HTML responses
+    encode gzip
+
+    # Security headers (augment those already set by the Python server)
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Robots-Tag              "index, follow"
+        -Server
+    }
+
+    # Access log
+    log {
+        output file /var/log/caddy/aim-access.log
+    }
+}

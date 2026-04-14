@@ -1,8 +1,8 @@
 """
-BuilderBot — constructs and deploys infrastructure in the AIM city.
+BuilderBot — constructs and deploys infrastructure in the AIM World.
 
 Responsibilities:
-- Spawn and register new nodes into the city registry
+- Spawn and register new nodes into the world registry
 - Prepare node configurations and capability sets
 - Track all construction work in the Legacy Ledger
 - Provide build-status reports
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class BuilderBot(AgentNode):
     """
-    A Builder Bot for the AIM city.
+    A Builder Bot for the AIM World.
 
     Parameters
     ----------
@@ -54,7 +54,7 @@ class BuilderBot(AgentNode):
         self._sig       = CreatorSignature(node_id=self.node_id)
         self._build_log: list[dict[str, Any]] = []
 
-        self.engine.add_rule("build",  "I am the Builder Bot. I construct and register new nodes for the AIM city.")
+        self.engine.add_rule("build",  "I am the Builder Bot. I construct and register new nodes for the AIM World.")
         self.engine.add_rule("spawn",  "Spawning creates a new node record in the registry, ready to serve tasks.")
         self.engine.add_rule("deploy", "Deployment registers and activates a node with its declared capabilities.")
         self.engine.add_rule("status", "I can report on all construction work completed so far.")
@@ -76,7 +76,7 @@ class BuilderBot(AgentNode):
     # ------------------------------------------------------------------
 
     async def _task_build_node(self, args: dict[str, Any]) -> dict[str, Any]:
-        """Register a new node record in the city registry."""
+        """Register a new node record in the world registry."""
         node_id      = args.get("node_id") or str(uuid.uuid4())
         host         = args.get("host", "127.0.0.1")
         port         = args.get("port", 0)

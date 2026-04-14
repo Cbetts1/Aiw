@@ -1,5 +1,5 @@
 """
-ProtectionAgent — official security bot for the AIM city.
+ProtectionAgent — official security bot for the AIM World.
 
 Responsibilities:
 - Verify CreatorSignature on incoming nodes and messages
@@ -64,7 +64,7 @@ class ProtectionAgent(AgentNode):
 
         self.engine.add_rule(
             "protect",
-            "I am a Protection Agent. I guard the city against unauthorised access and tampering.",
+            "I am a Protection Agent. I guard the AI World against unauthorised access and tampering.",
         )
         self.engine.add_rule(
             "audit",
@@ -72,7 +72,7 @@ class ProtectionAgent(AgentNode):
         )
         self.engine.add_rule(
             "blacklist",
-            "Blacklisted nodes are denied all access to city services.",
+            "Blacklisted nodes are denied all access to AI World services.",
         )
         self.engine.add_rule(
             "threat",
